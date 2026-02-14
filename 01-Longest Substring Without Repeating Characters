@@ -1,0 +1,135 @@
+//Bruteforce Approach
+
+class Solution {
+    public int lengthOfLongestSubstring(String str) {
+        int maxLength = 0;
+
+        // Keeps track of unique characters in the current substring
+        Set<Character> seen = new HashSet<>();
+
+        for (int start = 0; start < str.length(); start++) {
+            for (int end = start; end < str.length(); end++) {
+
+                seen.add(str.charAt(end));
+
+                int substringLength = end - start + 1;
+
+                /*
+                 * If set size < substring length → duplicate detected
+                 *
+                 * Reason:
+                 * Set stores only UNIQUE characters.
+                 *
+                 * Example:
+                 * substring = "abca"
+                 * length = 4
+                 * set = {a,b,c} → size = 3
+                 *
+                 * So one character repeated.
+                 */
+                if (seen.size() < substringLength) {
+                    break; //Since the duplicate character is found so any further substrings starting from the current 'start' index will also contain this duplicate. , Therefore, we exit the inner loop.
+                }
+
+                // If substring has all unique characters, update answer
+                maxLength = Math.max(maxLength, substringLength);
+            }
+
+            /*
+             * VERY IMPORTANT:
+             * We clear the set before moving to next start.
+             *
+             * Reason:
+             * Each 'start' represents a completely NEW substring.
+             */
+            seen.clear();
+        }
+
+        return maxLength;
+    }
+}
+
+
+//Optimal Approach
+
+class Solution {
+    public int lengthOfLongestSubstring(String str) {
+        /* 
+          Set stores characters currently present in the sliding window
+          It represents the CONTENT of the current substring
+         */
+        Set<Character> seen = new HashSet<>();
+
+        int windowStart = 0;
+        int windowEnd = 0;
+        int maxLength = 0;
+
+        while (windowEnd < str.length()) {
+            char ch = str.charAt(windowEnd);
+            /*
+             * If the character already exists in the window,
+             * the substring is no longer valid (duplicate detected).
+             *
+             * Since substring must remain CONTIGUOUS,
+             * we cannot remove the duplicate directly from the set.
+             *
+             * We must shrink the window from the LEFT
+             * until the previous occurrence of this character is removed.
+             *
+             * Example: "tmmzuxt"
+             * window = [t m m]
+             * duplicate = 'm'
+             *
+             * Remove from start:
+             * remove 't'
+             * remove first 'm'
+             * now window becomes valid again
+             */
+            if (seen.contains(ch)) {
+                // Shrink window until we cross the old duplicate character
+                while (str.charAt(windowStart) != ch) {
+                    seen.remove(str.charAt(windowStart));
+                    windowStart++;
+                }
+
+                /*
+                 * Now windowStart is pointing to the PREVIOUS occurrence of 'ch'
+                 * We move past it (windowStart++) to remove that occurrence from the window.
+                 *
+                 * IMPORTANT:
+                 * We do not explicitly remove the previous occurrence of this character from the set.
+                 *
+                 * Why?
+                 * Because we are not adding the new 'ch' yet.
+                 * After moving windowStart forward,
+                 * the existing 'ch' in the set now logically represents
+                 * the new occurrence inside the window.
+                 * this avoids unnecessary remove and add operation on the set
+                 */
+                windowStart++;
+            } else {
+                // Expand window normally if no duplicate
+                seen.add(ch);
+            }
+
+            /*
+            * Window is valid here.
+            * Update maximum substring length.
+            *
+            * substringLength = windowEnd - windowStart + 1
+            *
+            * NOTE:
+            * We can ALSO use seen.size() here,
+            * because in a valid window:
+            * number of characters == number of unique characters
+            */
+            int substringLength = windowEnd - windowStart + 1;
+            maxLength = Math.max(maxLength, substringLength);
+
+            // Move right boundary forward
+            windowEnd++;
+        }
+
+        return maxLength;
+    }
+}
