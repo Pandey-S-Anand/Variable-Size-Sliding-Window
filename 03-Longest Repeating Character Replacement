@@ -176,182 +176,194 @@ class Solution {
 
 //Optimal Approach
 
-class Solution {
-    /*
-    ---------------------------------------------------------------------------
-    IMPORTANT IDEA — WHY WE DO NOT DECREASE maxFreq DURING SHRINK
-    ---------------------------------------------------------------------------
-    
-    We maintain:
-    
-    maxFreq = the HIGHEST frequency EVER seen while expanding the window
-    NOT the actual max frequency of the CURRENT window    
-    ---------------------------------------------------------------------------
-    DRY RUN
-    ---------------------------------------------------------------------------
-    
-    String = "AABABBA"
-    k = 1
-    
-    Step 1
-    window = A
-    freq A=1
-    maxFreq=1
-    
-    size=1 → replacements=0 <=1 ✔
-    maxLength=1
-    
-    
-    Step 2
-    window = AA
-    freq A=2
-    maxFreq=2
-    
-    size=2 → replacements=0 ✔
-    maxLength=2
-    
-    
-    Step 3
-    window = AAB
-    freq A=2 B=1
-    maxFreq=2
-    
-    size=3 → replacements=1 ✔
-    maxLength=3
-    
-    
-    Step 4
-    window = AABA
-    freq A=3 B=1
-    maxFreq=3
-    
-    size=4 → replacements=1 ✔
-    maxLength=4
-    
-    
-    Step 5
-    window = AABAB
-    freq A=3 B=2
-    maxFreq=3
-    
-    size=5 → replacements=2 ❌ > k
-    SHRINK
-    
-    Remove A (index 0)
-    
-    window = ABAB
-    freq A=2 B=2
-    BUT maxFreq STILL = 3  ⚠️ (STALE)
-    window size=4
-    algo replacements = 4 - 3 = 1 ✔
-    Real replacements = 2 ❌
-    
-    We accepted an invalid window.
-    
-    Why is answer still safe?
-    
-    Because we ALREADY had a real valid window of size 4: "AABA"
-    
-    Shrinking cannot increase substring length it can only decrease it.
-    So this incorrect acceptance cannot create a bigger answer.
-    ---------------------------------------------------------------------------
-    Continue
-    ---------------------------------------------------------------------------
-    
-    Add B
-    window = ABABB
-    freq A=2 B=3
-    maxFreq=3 (valid maxFreq)
-    
-    size=5 → replacements=2 ❌
-    shrink
-    
-    Remove A (index 1)
-    window=BABB
-    maxFreq = 3 
-    size=4 → replacements=1 ✔
-    
-    
-    Add A
-    window=BABBA
-    size=5 → replacements=2 ❌
-    shrink
-    
-    Remove B (index 2)
-    window=ABBA
-    size=4 → replacements=1 ✔
-    
-    
-    Final answer = 4
-    Correct answer = 4
-    
-    ---------------------------------------------------------------------------
-    CRUX
-    ---------------------------------------------------------------------------
-    
-    We DO NOT maintain a perfectly valid window.
-    
-    We maintain a window that was valid at SOME POINT in the past.
-    
-    And that is sufficient to guarantee correctness
-    because the answer depends only on MAXIMUM LENGTH.
-    
-    ---------------------------------------------------------------------------
-    Does stale maxFreq cause excessive shrinking?
-    ---------------------------------------------------------------------------
-    
-    NO.
-    
-    We always have:
-    
-    ourMaxFreq (can be stale, because we never decrease it) >= realMaxFreq (of the current window)
-    
-    Therefore:
-    
-    windowSize - ourMaxFreq <= windowSize - realMaxFreq
-    
-    Meaning:
-    We shrink LESS than or equal to the correct amount, never more.
-    
-    So windowStart never moves disproportionately forward.
-    
-    Example:
-    
-    String: "AAABBC" , k = 1
-    
-    Build window
-    
-    Expand to AAABB
-    A A A B B
-    freq A=3 B=2
-    maxFreq=3
-    
-    size=5
-    replacements = 5-3 = 2 >1 ❌
-    SHRINK
-    
-    
-    Remove A:
-    
-    A A B B
-    real maxFreq = 2
-    our maxFreq = 3 (outdated)
-    
-    size=4
-    replacements = 4-3 =1 ✔
-    
-    But REAL replacements = 2 ❌
-    
-    We should shrink more…
-    but we don’t
-    
-    👉 Notice:
-    
-    We shrank LESS than correct logic
-    
-    Not more
-    */
+/*
+===============================================================================
+LONGEST REPEATING CHARACTER REPLACEMENT — FULL CORRECT EXPLANATION
+===============================================================================
 
+Goal:
+Find the longest substring that can be converted into identical characters
+using at most k replacements.
+
+For any window:
+
+    replacementsNeeded = windowSize - MaxFreqInWindow
+
+where:
+MaxFreqInWindow = frequency of the most frequent character inside CURRENT window
+
+Valid window condition:
+    windowSize - MaxFreqInWindow <= k
+
+
+===============================================================================
+THE TRICK (WHY maxFreq IS NEVER DECREASED)
+===============================================================================
+
+We maintain:
+
+    maxFreq = highest frequency EVER seen while expanding the window
+
+Important:
+maxFreq is NOT always equal to MaxFreqInWindow.
+Sometimes it becomes stale (greater than actual frequency inside current window).
+
+So:
+
+    maxFreq >= MaxFreqInWindow
+
+
+We shrink window while:
+
+    windowSize - maxFreq > k
+
+But mathematically correct shrinking condition should be:
+
+    windowSize - MaxFreqInWindow > k
+
+
+Since:
+
+    maxFreq >= MaxFreqInWindow
+
+⇒ windowSize - maxFreq <= windowSize - MaxFreqInWindow
+
+Meaning:
+
+We might shrink LATER than required
+but NEVER earlier than required.
+
+So we never discard a potentially optimal window.
+
+
+===============================================================================
+WHY ANSWER REMAINS CORRECT
+===============================================================================
+
+Right pointer only moves forward.
+
+If we record a window of length L:
+
+Either:
+1) Window is actually valid → correct
+
+OR
+2) Window became invalid due to stale maxFreq
+
+But if case (2) happens,
+then this same length must have appeared earlier when window was valid
+during expansion phase.
+
+We only delay shrinking but never shrink too early — hence we never miss the optimal window.
+
+===============================================================================
+FULL DRY RUN
+===============================================================================
+
+String = "AABABBA"
+k = 1
+
+We track:
+windowStart, windowEnd, maxFreq, windowSize, replacements
+
+---------------------------------------------------------------------------
+Step 1: Add 'A'
+window = [A]
+freq: A=1
+maxFreq=1
+size=1
+replacements = 1-1 = 0 ✓ valid
+maxLength=1
+
+---------------------------------------------------------------------------
+Step 2: Add 'A'
+window = [AA]
+freq: A=2
+maxFreq=2
+size=2
+replacements = 2-2 = 0 ✓ valid
+maxLength=2
+
+---------------------------------------------------------------------------
+Step 3: Add 'B'
+window = [AAB]
+freq: A=2 B=1
+maxFreq=2
+size=3
+replacements = 3-2 = 1 ✓ valid
+maxLength=3
+
+---------------------------------------------------------------------------
+Step 4: Add 'A'
+window = [AABA]
+freq: A=3 B=1
+maxFreq=3
+size=4
+replacements = 4-3 = 1 ✓ valid
+maxLength=4
+
+---------------------------------------------------------------------------
+Step 5: Add 'B'
+window = [AABAB]
+freq: A=3 B=2
+maxFreq=3
+size=5
+replacements = 5-3 = 2 ✗ invalid → shrink
+
+Remove left 'A'
+
+window = [ABAB]
+freq: A=2 B=2
+MaxFreqInWindow=2
+BUT maxFreq still = 3 (stale)
+
+Algorithm check:
+size=4
+replacements = 4-3 = 1 ✓ accepts
+
+REAL replacements = 4-2 = 2 ✗ invalid
+
+We kept an invalid window,
+BUT length 4 already existed as valid substring "AABA".
+
+So answer still safe.
+
+---------------------------------------------------------------------------
+Step 6: Add 'B'
+window = [ABABB]
+freq: A=2 B=3
+maxFreq=3
+size=5
+replacements = 5-3 = 2 ✗ shrink
+
+Remove 'A'
+window = [BABB]
+freq: A=1 B=3
+size=4
+replacements = 4-3 = 1 ✓ valid
+maxLength remains 4
+
+---------------------------------------------------------------------------
+Step 7: Add 'A'
+window = [BABBA]
+freq: A=2 B=3
+maxFreq=3
+size=5
+replacements = 5-3 = 2 ✗ shrink
+
+Remove 'B'
+window = [ABBA]
+freq: A=2 B=2
+size=4
+replacements = 4-3 = 1 ✓ accepted (stale again)
+
+---------------------------------------------------------------------------
+END
+
+Maximum recorded length = 4
+===============================================================================
+*/
+class Solution {
     public int characterReplacement(String str, int k) {
         int[] freqArr = new int[26];
 
@@ -365,7 +377,7 @@ class Solution {
             freqArr[ch - 'A']++;
             maxFreq = Math.max(maxFreq, freqArr[ch - 'A']);
 
-            while (!canFormRepeatingSubstring(freqArr, windowStart, windowEnd, k, maxFreq)) {
+            while (!canFormRepeatingSubstring(windowStart, windowEnd, k, maxFreq)) {
                 freqArr[str.charAt(windowStart++) - 'A']--;
             }
 
@@ -377,7 +389,7 @@ class Solution {
         return maxLength;
     }
 
-    private boolean canFormRepeatingSubstring(int[] freqArr, int windowStart, int windowEnd, int k, int maxFreq) {
+    private boolean canFormRepeatingSubstring(int windowStart, int windowEnd, int k, int maxFreq) {
         int windowSize = windowEnd - windowStart + 1;
         int replacementChars = windowSize - maxFreq;
         return replacementChars <= k;
