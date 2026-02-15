@@ -61,7 +61,7 @@ public class Solution {
      */
      Map<Character,Integer> freqMap = new HashMap<>();
 
-	   int windowStart = 0;
+	 int windowStart = 0;
      int windowEnd = 0;	
      int maxLength = 0;
 
