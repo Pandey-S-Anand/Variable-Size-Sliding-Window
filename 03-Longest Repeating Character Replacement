@@ -1,0 +1,385 @@
+//Bruteforce Approach
+
+class Solution {
+    public int characterReplacement(String str, int k) {
+        // frequencyArr stores frequency of characters in current substring
+        int[] frequencyArr = new int[26];
+
+        int maxLength = 0;
+
+        for (int start = 0; start < str.length(); start++) {
+            for (int end = start; end < str.length(); end++) {
+                // Include current character into substring
+                frequencyArr[str.charAt(end) - 'A']++;
+
+                int substringLength = end - start + 1;
+
+                /*
+                 Check if current substring can be converted into
+                 all identical characters using at most k replacements.
+                */
+                if (!canFormRepeatingSubstring(frequencyArr, substringLength, k)) {
+                    /*
+                     IMPORTANT BREAK CONDITION
+                    
+                     If substring [start ... end] cannot be converted
+                     into identical characters within k operations,
+                     then any longer substring [start ... end+1], [start ... end+2]...
+                    
+                     will ALSO require >= same or more replacements.
+                    
+                     Reason:
+                     Window length increases → mismatched characters either increase or stay same
+                     Required replacements never decrease while expanding.
+                    
+                     Special case:
+                     Replacements remain SAME only when the newly added character
+                     is the same as the current most frequent character.
+                     Even then, replacements do not reduce — they just stay constant.
+                    
+                     Therefore the substring will never become valid again.
+                     So further expansion is useless → break inner loop.
+                    */
+                    break;
+                }
+
+                // Valid substring → update answer
+                maxLength = Math.max(maxLength, substringLength);
+            }
+
+            // Reset frequency array for next starting index
+            Arrays.fill(frequencyArr, 0);
+        }
+
+        return maxLength;
+    }
+
+    private boolean canFormRepeatingSubstring(int[] frequencyArr, int windowLength, int k) {
+        /*
+         Key Idea:
+         To convert the whole substring into identical characters,
+         we should convert everything into the MOST FREQUENT character.
+        
+         Why?
+         Because that minimizes the number of replacements needed.
+        */
+        int maxFreq = getMaxFreq(frequencyArr);
+
+        /*
+         Number of characters that must be replaced =
+         total characters - most frequent character count
+        */
+        int remainingChars = windowLength - maxFreq;
+
+        /*
+         If replacements needed <= k
+         → substring can be made uniform
+        */
+        return remainingChars <= k;
+    }
+
+    private int getMaxFreq(int[] frequencyArr) {
+        int maxFreq = 0;
+
+        for (int i = 0; i < 26; i++) {
+            /*
+            If frequency is zero → character not present in substring
+            So it cannot be the dominant character.
+            Skip it for clarity of reasoning.
+            */
+            if (frequencyArr[i] == 0) {
+                continue;
+            }
+            if (frequencyArr[i] > maxFreq) {
+                maxFreq = frequencyArr[i];
+            }
+        }
+
+        return maxFreq;
+    }
+}
+
+
+//Better Approach
+
+class Solution {
+    public int characterReplacement(String str, int k) {
+        /*
+         freqArr[i] = how many times character ('A' + i)
+         exists inside the CURRENT WINDOW
+        */
+        int[] freqArr = new int[26];
+
+        int windowStart = 0;
+        int windowEnd = 0;
+        int maxLength = 0;
+
+        while (windowEnd < str.length()) {
+            // Expand window by including current character
+            char ch = str.charAt(windowEnd);
+            freqArr[ch - 'A']++;
+
+            /*
+             If current window cannot be converted into
+             identical characters within k replacements,
+             shrink window from the left.
+            */
+            while (!canFormRepeatingSubstring(freqArr, windowStart, windowEnd, k)) {
+                freqArr[str.charAt(windowStart++) - 'A']--;
+            }
+
+            /*
+             Now window is valid:
+             we can convert this entire substring into
+             same characters using <= k replacements
+            */
+            int substringLength = windowEnd - windowStart + 1;
+            maxLength = Math.max(maxLength, substringLength);
+
+            // Continue expanding window
+            windowEnd++;
+        }
+
+        return maxLength;
+    }
+
+    private boolean canFormRepeatingSubstring(int[] freqArr, int windowStart, int windowEnd, int k) {
+        int windowSize = windowEnd - windowStart + 1;
+        /*
+         To make all characters identical,
+         best strategy is to convert everything
+         into the MOST FREQUENT character.
+        
+         Required replacements = window size - frequency of dominant character
+        */
+        int maxFreq = getMaxFreq(freqArr);
+
+        int replacementChars = windowSize - maxFreq;
+
+        return replacementChars <= k;
+    }
+
+    private int getMaxFreq(int[] freqArr) {
+        int maxFreq = 0;
+
+        for (int val : freqArr) {
+            if (val == 0) {
+                continue;
+            }
+            maxFreq = Math.max(maxFreq, val);
+        }
+
+        return maxFreq;
+    }
+}
+
+
+//Optimal Approach
+
+class Solution {
+    /*
+    ---------------------------------------------------------------------------
+    IMPORTANT IDEA — WHY WE DO NOT DECREASE maxFreq DURING SHRINK
+    ---------------------------------------------------------------------------
+    
+    We maintain:
+    
+    maxFreq = the HIGHEST frequency EVER seen while expanding the window
+    NOT the actual max frequency of the CURRENT window    
+    ---------------------------------------------------------------------------
+    DRY RUN
+    ---------------------------------------------------------------------------
+    
+    String = "AABABBA"
+    k = 1
+    
+    Step 1
+    window = A
+    freq A=1
+    maxFreq=1
+    
+    size=1 → replacements=0 <=1 ✔
+    maxLength=1
+    
+    
+    Step 2
+    window = AA
+    freq A=2
+    maxFreq=2
+    
+    size=2 → replacements=0 ✔
+    maxLength=2
+    
+    
+    Step 3
+    window = AAB
+    freq A=2 B=1
+    maxFreq=2
+    
+    size=3 → replacements=1 ✔
+    maxLength=3
+    
+    
+    Step 4
+    window = AABA
+    freq A=3 B=1
+    maxFreq=3
+    
+    size=4 → replacements=1 ✔
+    maxLength=4
+    
+    
+    Step 5
+    window = AABAB
+    freq A=3 B=2
+    maxFreq=3
+    
+    size=5 → replacements=2 ❌ > k
+    SHRINK
+    
+    Remove A (index 0)
+    
+    window = ABAB
+    freq A=2 B=2
+    BUT maxFreq STILL = 3  ⚠️ (STALE)
+    window size=4
+    algo replacements = 4 - 3 = 1 ✔
+    Real replacements = 2 ❌
+    
+    We accepted an invalid window.
+    
+    Why is answer still safe?
+    
+    Because we ALREADY had a real valid window of size 4: "AABA"
+    
+    Shrinking cannot increase substring length it can only decrease it.
+    So this incorrect acceptance cannot create a bigger answer.
+    ---------------------------------------------------------------------------
+    Continue
+    ---------------------------------------------------------------------------
+    
+    Add B
+    window = ABABB
+    freq A=2 B=3
+    maxFreq=3 (valid maxFreq)
+    
+    size=5 → replacements=2 ❌
+    shrink
+    
+    Remove A (index 1)
+    window=BABB
+    maxFreq = 3 
+    size=4 → replacements=1 ✔
+    
+    
+    Add A
+    window=BABBA
+    size=5 → replacements=2 ❌
+    shrink
+    
+    Remove B (index 2)
+    window=ABBA
+    size=4 → replacements=1 ✔
+    
+    
+    Final answer = 4
+    Correct answer = 4
+    
+    ---------------------------------------------------------------------------
+    CRUX
+    ---------------------------------------------------------------------------
+    
+    We DO NOT maintain a perfectly valid window.
+    
+    We maintain a window that was valid at SOME POINT in the past.
+    
+    And that is sufficient to guarantee correctness
+    because the answer depends only on MAXIMUM LENGTH.
+    
+    ---------------------------------------------------------------------------
+    Does stale maxFreq cause excessive shrinking?
+    ---------------------------------------------------------------------------
+    
+    NO.
+    
+    We always have:
+    
+    ourMaxFreq (can be stale, because we never decrease it) >= realMaxFreq (of the current window)
+    
+    Therefore:
+    
+    windowSize - ourMaxFreq <= windowSize - realMaxFreq
+    
+    Meaning:
+    We shrink LESS than or equal to the correct amount, never more.
+    
+    So windowStart never moves disproportionately forward.
+    
+    Example:
+    
+    String: "AAABBC" , k = 1
+    
+    Build window
+    
+    Expand to AAABB
+    A A A B B
+    freq A=3 B=2
+    maxFreq=3
+    
+    size=5
+    replacements = 5-3 = 2 >1 ❌
+    SHRINK
+    
+    
+    Remove A:
+    
+    A A B B
+    real maxFreq = 2
+    our maxFreq = 3 (outdated)
+    
+    size=4
+    replacements = 4-3 =1 ✔
+    
+    But REAL replacements = 2 ❌
+    
+    We should shrink more…
+    but we don’t
+    
+    👉 Notice:
+    
+    We shrank LESS than correct logic
+    
+    Not more
+    */
+
+    public int characterReplacement(String str, int k) {
+        int[] freqArr = new int[26];
+
+        int windowStart = 0;
+        int windowEnd = 0;
+        int maxLength = 0;
+        int maxFreq = 0;
+
+        while (windowEnd < str.length()) {
+            char ch = str.charAt(windowEnd);
+            freqArr[ch - 'A']++;
+            maxFreq = Math.max(maxFreq, freqArr[ch - 'A']);
+
+            while (!canFormRepeatingSubstring(freqArr, windowStart, windowEnd, k, maxFreq)) {
+                freqArr[str.charAt(windowStart++) - 'A']--;
+            }
+
+            int substringLength = windowEnd - windowStart + 1;
+            maxLength = Math.max(maxLength, substringLength);
+            windowEnd++;
+        }
+
+        return maxLength;
+    }
+
+    private boolean canFormRepeatingSubstring(int[] freqArr, int windowStart, int windowEnd, int k, int maxFreq) {
+        int windowSize = windowEnd - windowStart + 1;
+        int replacementChars = windowSize - maxFreq;
+        return replacementChars <= k;
+    }
+}
