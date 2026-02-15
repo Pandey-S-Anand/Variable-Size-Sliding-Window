@@ -1,0 +1,162 @@
+//Bruteforce Approach
+
+public class Solution {
+    public static int kDistinctChars(int k, String str) {
+        // Stores distinct characters present in current substring
+        Set<Character> distinctChars = new HashSet<>();
+
+        int maxLength = 0;
+
+        for (int start = 0; start < str.length(); start++) {
+            for (int end = start; end < str.length(); end++) {
+                // Include the new character into current substring
+                distinctChars.add(str.charAt(end));
+
+                /*
+                 If distinct characters exceed k ? substring invalid
+                
+                 Important observation:
+                 Once the substring [start ... end] becomes invalid,
+                 any longer substring [start ... end+1], [start ... end+2]...
+                 will ALSO remain invalid because distinct count can only
+                 increase or stay same ? never decrease while expanding.
+                
+                 Therefore we BREAK and move to next start.
+                */
+                if (distinctChars.size() > k) {
+                    break;
+                }
+
+                // update maximum length
+                int substringLength = end - start + 1;
+                maxLength = Math.max(maxLength, substringLength);
+            }
+
+            /*
+             VERY IMPORTANT RESET
+            
+             Each new 'start' means we are forming a completely new substring.
+             Previous distinct characters do not belong to the new substring.
+            
+             So we clear the set to rebuild character tracking
+             for the next starting index.
+            */
+            distinctChars.clear();
+        }
+
+        return maxLength;
+    }
+}
+
+
+//Better Approach
+
+public class Solution {
+	public static int kDistinctChars(int k, String str) {
+     /*
+      freqMap tracks frequency of characters inside CURRENT WINDOW.
+
+      Important:
+      Map size == number of DISTINCT characters in the window
+     */
+     Map<Character,Integer> freqMap = new HashMap<>();
+
+	   int windowStart = 0;
+     int windowEnd = 0;	
+     int maxLength = 0;
+
+     // Expand the window
+     while(windowEnd < str.length()){
+       char ch = str.charAt(windowEnd);
+
+       // Include new character in the window
+       freqMap.put(ch, freqMap.getOrDefault(ch,0)+1);
+
+       /*
+        If distinct characters exceed k ? window becomes INVALID
+
+        Since we are looking for a CONTIGUOUS SUBSTRING,
+        we cannot skip characters in between.
+
+        Therefore the only way to fix the window is:
+        SHRINK FROM LEFT
+
+        We keep removing characters from the left boundary
+        until distinct characters become <= k again.
+       */
+       if(freqMap.size() > k){
+         while(freqMap.size() > k){
+           char startChar = str.charAt(windowStart);
+
+           // Remove its contribution
+           freqMap.put(startChar, freqMap.get(startChar) - 1);
+
+           // Completely remove from map if frequency becomes zero
+           if(freqMap.get(startChar) == 0){
+              freqMap.remove(startChar);
+           }
+
+           // Move left boundary forward
+           windowStart++;
+         }
+       }
+
+       /*
+        Now window is VALID again (distinct <= k)
+        Update answer using current window length
+       */
+       int substringLength = windowEnd - windowStart + 1;
+       maxLength = Math.max(maxLength, substringLength); 
+
+       // Expand right boundary
+       windowEnd++;
+     }
+     
+     return maxLength;
+	}
+}
+
+
+//Optimal Approach
+
+import java.util.*;
+
+public class Solution {
+    public static int kDistinctChars(int k, String str) {
+        int[] freqArr = new int[26];
+        int windowStart = 0;
+        int windowEnd = 0;
+        int maxLength = 0;
+
+        while (windowEnd < str.length()) {
+            freqArr[str.charAt(windowEnd) - 'a']++;
+
+            while (!withinDistinctLimit(freqArr, k)) {
+                freqArr[str.charAt(windowStart++) - 'a']--;
+            }
+
+            int substringLength = windowEnd - windowStart + 1;
+            maxLength = Math.max(maxLength, substringLength);
+
+            windowEnd++;
+        }
+
+        return maxLength;
+    }
+
+    /*
+    Counts how many unique characters currently exist in the window.
+    If this count exceeds k ? window invalid Otherwise window valid
+    */
+    private static boolean withinDistinctLimit(int[] freqArr, int k) {
+        int distinctCount = 0;
+
+        for (int i = 0; i < 26; i++) {
+            if (freqArr[i] != 0) {
+                distinctCount++;
+            }
+        }
+
+        return distinctCount <= k;
+    }
+}
