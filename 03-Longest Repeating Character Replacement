@@ -230,11 +230,7 @@ Since:
 
 Meaning:
 
-We might shrink LATER than required
-but NEVER earlier than required.
-
-So we never discard a potentially optimal window.
-
+We only delay shrinking but never shrink too early — hence we never miss the potentially optimal window.
 
 ===============================================================================
 WHY ANSWER REMAINS CORRECT
@@ -253,8 +249,6 @@ OR
 But if case (2) happens,
 then this same length must have appeared earlier when window was valid
 during expansion phase.
-
-We only delay shrinking but never shrink too early — hence we never miss the optimal window.
 
 ===============================================================================
 FULL DRY RUN
