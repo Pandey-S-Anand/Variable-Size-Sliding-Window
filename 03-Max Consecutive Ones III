@@ -1,0 +1,128 @@
+//Bruteforce Approach
+
+class Solution {
+    public int longestOnes(int[] arr, int k) {
+        int maxValidWindowLength = 0;
+
+        for (int windowStart = 0; windowStart < arr.length; windowStart++) {
+
+            int onesCountInWindow = 0;
+
+            for (int windowEnd = windowStart; windowEnd < arr.length; windowEnd++) {
+                // update count of ones inside window
+                if (arr[windowEnd] == 1) {
+                    onesCountInWindow++;
+                }
+
+                int windowLength = windowEnd - windowStart + 1;
+
+                // stop expanding once window becomes invalid
+                if (!isWindowValid(windowLength, onesCountInWindow, k)) {
+                    break; // expanding further cannot reduce zero count, so window will remain invalid
+                }
+
+                // valid window -> update answer
+                maxValidWindowLength = Math.max(maxValidWindowLength, windowLength);
+            }
+        }
+
+        return maxValidWindowLength;
+    }
+
+    /*
+      A window is VALID if:
+      number of zeros in window <= k
+      Because we are allowed to flip at most k zeros to ones.
+      zerosInWindow = windowLength - onesCountInWindow
+    
+      So condition becomes:
+        windowLength - onesCountInWindow <= k
+    */
+    private boolean isWindowValid(int windowLength, int onesCount, int maxZeroFlipsAllowed) {
+        int zerosInWindow = windowLength - onesCount;
+        return zerosInWindow <= maxZeroFlipsAllowed;
+    }
+}
+
+
+//Optimal Approach
+
+class Solution {
+    public int longestOnes(int[] arr, int k) {
+        int windowStart = 0;
+        int windowEnd = 0;
+
+        int onesCount = 0; // number of 1s inside current window
+        int maxConsecutiveOnes = 0; // best valid window found so far
+
+        while (windowEnd < arr.length) {
+            //include current element into window
+            if (arr[windowEnd] == 1) {
+                onesCount++;
+            }
+
+            /*
+            If window becomes invalid (more than k zeros), shrink from left.
+            We remove elements until zeros in the window are within allowed limit,
+            so the window can represent consecutive 1s after flipping at most k zeros.
+            */
+            while (!isWindowValid(windowStart, windowEnd, onesCount, k)) {
+                if (arr[windowStart] == 1) {
+                    onesCount--; // removing a 1 from window
+                }
+                windowStart++; // shrink window
+            }
+
+            /*
+            window is valid here
+            So update maximum length
+            */
+            int subarrayLength = windowEnd - windowStart + 1;
+            maxConsecutiveOnes = Math.max(maxConsecutiveOnes, subarrayLength);
+
+            //expand window
+            windowEnd++;
+        }
+
+        return maxConsecutiveOnes;
+    }
+
+    private boolean isWindowValid(int windowStart, int windowEnd, int onesCount, int maxZeroFlipsAllowed) {
+        int windowLength = windowEnd - windowStart + 1;
+        int zerosInWindow = windowLength - onesCount;
+        return zerosInWindow <= maxZeroFlipsAllowed;
+    }
+}
+
+
+//Concise implementation
+
+class Solution {
+    public int longestOnes(int[] arr, int k) {
+        int windowStart = 0;
+        int windowEnd = 0;
+
+        int zeroCount = 0;
+        int maxConsecutiveOnes = 0;
+
+        while (windowEnd < arr.length) {
+            if (arr[windowEnd] == 0) {
+                zeroCount++;
+            }
+
+            while (zeroCount > k) {
+                if (arr[windowStart] == 0) {
+                    zeroCount--;
+                }
+                windowStart++;
+            }
+
+            int subarrayLength = windowEnd - windowStart + 1;
+            maxConsecutiveOnes = Math.max(maxConsecutiveOnes, subarrayLength);
+
+            windowEnd++;
+        }
+
+        return maxConsecutiveOnes;
+    }
+}
