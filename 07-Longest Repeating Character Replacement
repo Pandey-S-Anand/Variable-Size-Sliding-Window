@@ -230,8 +230,9 @@ Since:
 
 Meaning:
 
-We only delay shrinking but never shrink too early — hence we never miss the potentially optimal window.
-
+Stale maxFreq delays shrinking but never shrink too early
+We may temporarily keep an invalid window,
+but we will never discard a potentially optimal window.
 ===============================================================================
 WHY ANSWER REMAINS CORRECT
 ===============================================================================
@@ -355,8 +356,8 @@ replacements = 4-3 = 1 ✓ accepted (stale again)
 END
 
 Maximum recorded length = 4
-===============================================================================
 */
+
 class Solution {
     public int characterReplacement(String str, int k) {
         int[] freqArr = new int[26];
