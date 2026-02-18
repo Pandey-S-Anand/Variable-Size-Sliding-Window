@@ -52,13 +52,13 @@ class Solution {
         int windowStart = 0;
         int windowEnd = 0;
 
-        int onesCount = 0; // number of 1s inside current window
+        int zerosCount = 0; // number of 0s inside current window
         int maxConsecutiveOnes = 0; // best valid window found so far
 
         while (windowEnd < arr.length) {
             //include current element into window
-            if (arr[windowEnd] == 1) {
-                onesCount++;
+            if (arr[windowEnd] == 0) {
+                zerosCount++;
             }
 
             /*
@@ -66,9 +66,9 @@ class Solution {
             We remove elements until zeros in the window are within allowed limit,
             so the window can represent consecutive 1s after flipping at most k zeros.
             */
-            while (!isWindowValid(windowStart, windowEnd, onesCount, k)) {
-                if (arr[windowStart] == 1) {
-                    onesCount--; // removing a 1 from window
+            while (!isWindowValid(zerosCount, k)) {
+                if (arr[windowStart] == 0) {
+                    zerosCount--; // removing a 0 from window
                 }
                 windowStart++; // shrink window
             }
@@ -87,42 +87,7 @@ class Solution {
         return maxConsecutiveOnes;
     }
 
-    private boolean isWindowValid(int windowStart, int windowEnd, int onesCount, int maxZeroFlipsAllowed) {
-        int windowLength = windowEnd - windowStart + 1;
-        int zerosInWindow = windowLength - onesCount;
+    private boolean isWindowValid(int zerosInWindow, int maxZeroFlipsAllowed) {
         return zerosInWindow <= maxZeroFlipsAllowed;
-    }
-}
-
-
-//Concise implementation
-
-class Solution {
-    public int longestOnes(int[] arr, int k) {
-        int windowStart = 0;
-        int windowEnd = 0;
-
-        int zeroCount = 0;
-        int maxConsecutiveOnes = 0;
-
-        while (windowEnd < arr.length) {
-            if (arr[windowEnd] == 0) {
-                zeroCount++;
-            }
-
-            while (zeroCount > k) {
-                if (arr[windowStart] == 0) {
-                    zeroCount--;
-                }
-                windowStart++;
-            }
-
-            int subarrayLength = windowEnd - windowStart + 1;
-            maxConsecutiveOnes = Math.max(maxConsecutiveOnes, subarrayLength);
-
-            windowEnd++;
-        }
-
-        return maxConsecutiveOnes;
     }
 }
