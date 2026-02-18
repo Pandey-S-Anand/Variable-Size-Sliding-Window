@@ -5,28 +5,43 @@ class Solution {
         int[] freqArr = new int[26];
         int maxLength = 0;
 
+        // choose starting index
         for (int start = 0; start < str.length(); start++) {
+
+            // expand substring
             for (int end = start; end < str.length(); end++) {
+
+                // include current character in substring
                 freqArr[str.charAt(end) - 'a']++;
+
+                /*
+                 If any character frequency exceeds k,
+                 current substring and all longer substrings
+                 from this start index will remain invalid.
+                */
                 if (!isWithinKFrequencyLimit(freqArr, k)) {
                     break;
                 }
+
+                // valid substring → update answer
                 int substringLength = end - start + 1;
                 maxLength = Math.max(maxLength, substringLength);
             }
+
+            // reset frequencies for next starting index
             Arrays.fill(freqArr, 0);
         }
 
         return maxLength;
     }
 
+    // valid only if every character appears at most k times
     private boolean isWithinKFrequencyLimit(int[] freqArr, int k) {
         for (int i = 0; i < 26; i++) {
-            if (freqArr[i] != 0 && freqArr[i] > k) {
+            if (freqArr[i] > k) {
                 return false;
             }
         }
-
         return true;
     }
 }
