@@ -1,5 +1,52 @@
 //Bruteforce Approach
 
+class Solution {
+    public int longestSubarray(int[] arr) {
+        int count0s = 0;
+        int maxLength = 0;
+
+        // Try every possible starting index
+        for (int start = 0; start < arr.length; start++) {
+            count0s = 0; // reset zero count for new subarray
+
+            // Expand subarray to the right
+            for (int end = start; end < arr.length; end++) {
+
+                if (arr[end] == 0) {
+                    count0s++;
+                }
+
+                /*
+                 If more than one zero appears,
+                 this subarray can no longer be valid.
+                 Further expansion cannot reduce zero count
+                 Hence we stop exploring this start index.
+                */
+                if (!isValidSubarray(count0s)) {
+                    break;
+                }
+
+                /*
+                 We must delete exactly ONE element:
+                 - if a zero exists → delete that zero
+                 - if all 1s → delete any one 1
+                
+                 Therefore usable length = window size - 1
+                */
+                int subarrayLength = end - start + 1;
+                maxLength = Math.max(maxLength, subarrayLength - 1);
+            }
+        }
+
+        return maxLength;
+    }
+
+    // valid only if at most one zero exists
+    private boolean isValidSubarray(int count0s) {
+        return count0s <= 1;
+    }
+}
+
 
 //Optimal Approach
 
