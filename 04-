@@ -1,0 +1,87 @@
+//Bruteforce Approach
+
+
+//Optimal Approach
+
+/*
+ * ============================================================================
+ * KEY OBSERVATION
+ * ============================================================================
+ * We must delete exactly ONE element from the array.
+ *
+ * So we maintain a sliding window that allows AT MOST ONE zero.
+ *
+ * Reason:
+ * - If a zero exists inside the window → we delete that zero
+ * - If no zero exists (i.e all 1s) → we must delete one of the 1s (problem requirement)
+ *
+ * Therefore, the window helps us identify WHICH element can be deleted,
+ * but the deletion itself is always mandatory.
+ *
+ * Hence the effective usable length becomes:
+ *
+ *      effectiveLength = windowLength - 1
+ *
+ *
+ * ============================================================================
+ * WINDOW BEHAVIOR
+ * ============================================================================
+ * 1) First zero enters the window
+ *      → Window is still valid
+ *      → This zero represents the element we will delete
+ *
+ * 2) Second zero enters the window
+ *      → Window becomes invalid (cannot delete two elements)
+ *      → Shrink window from left until only one zero remains
+ *
+ * After restoring validity:
+ * The remaining zero inside the window represents the element
+ * that will be deleted for the current window.
+ * ============================================================================
+ */
+class Solution {
+    public int longestSubarray(int[] arr) {
+        int windowStart = 0;
+        int windowEnd = 0;
+        int count0s = 0; // number of zeros currently inside the window
+        int maxLength = 0; // best answer found so far (after one deletion)
+
+        while (windowEnd < arr.length) {
+
+            // include current element into window
+            if (arr[windowEnd] == 0) {
+                count0s++;
+            }
+
+            /*
+             Window can contain AT MOST one zero.
+             If more than one zero exists, we cannot delete both,
+             so shrink window from left until only one zero remains.
+            */
+            while (!isValidWindow(count0s)) {
+                if (arr[windowStart] == 0) {
+                    count0s--; // removing a zero from window
+                }
+                windowStart++; // shrink window
+            }
+
+            /*
+             We must delete exactly one element.
+             So usable length = window size - 1
+             (delete the zero if present, otherwise delete a 1)
+            */
+            int subarrayLength = windowEnd - windowStart + 1;
+            maxLength = Math.max(maxLength, subarrayLength - 1);
+
+            // expand window
+            windowEnd++;
+        }
+
+        return maxLength;
+    }
+
+    // window valid only if it contains at most one zero
+    private boolean isValidWindow(int count0s) {
+        return count0s <= 1;
+    }
+}
