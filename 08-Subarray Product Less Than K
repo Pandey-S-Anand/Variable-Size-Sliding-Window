@@ -1,0 +1,132 @@
+//Bruteforce Approach
+
+class Solution {
+    /*
+    Goal:
+    Count all subarrays whose product < k.
+    
+    For each starting index:
+        expand the subarray to the right
+        maintain running product
+        stop expansion once product ≥ k
+    
+    ---------------------------------------------------------------------------
+    WHY BREAK IS CORRECT
+    
+    All array elements are positive (arr[i] ≥ 1)
+    
+    So when we extend the subarray:
+        product only increases (or stays same if 1)
+    
+    Once product ≥ k,
+    any longer subarray from the same start index will
+    also have product ≥ k.
+    
+    Therefore no future end positions can be valid,
+    and we safely break early.
+    ===========================================================================
+    */
+
+    public int numSubarrayProductLessThanK(int[] arr, int k) {
+        int subarrayCount = 0;
+        int subarrayProduct = 1;
+
+        for (int start = 0; start < arr.length; start++) {
+            for (int end = start; end < arr.length; end++) {
+                // include current element
+                subarrayProduct *= arr[end];
+
+                // once invalid, further expansion cannot fix it
+                if (subarrayProduct >= k) {
+                    break;
+                }
+
+                // valid subarray
+                subarrayCount++;
+            }
+
+            // reset for next start index
+            subarrayProduct = 1;
+        }
+
+        return subarrayCount;
+    }
+}
+
+
+
+//Optimal Approach
+
+class Solution {
+    /*    
+    Goal:
+    Count number of contiguous subarrays whose product < k
+    
+    Key Property:
+    All numbers are positive (1 ≤ arr[i] ≤ 1000)
+    
+    So:
+    - Expanding window → product increases
+    - Shrinking window → product decreases
+    
+    Hence sliding window works (monotonic behavior)
+    
+    ---------------------------------------------------------------------------
+    IMPORTANT EDGE CASE
+    
+    If k <= 1:
+        No valid subarray can exist.
+    
+    Why?
+        Smallest possible product = 1 (since arr[i] ≥ 1)
+    
+        So product can never be:
+            < 1
+            < 0
+    
+    Therefore answer must be 0.
+    ===========================================================================
+    */
+
+    public int numSubarrayProductLessThanK(int[] arr, int k) {
+        // No product of positive integers can be < 1
+        if (k <= 1) {
+            return 0;
+        }
+
+        int windowStart = 0;
+        int windowEnd = 0;
+        int windowProduct = 1;
+        int subarrayCount = 0;
+
+        while (windowEnd < arr.length) {
+            // expand window
+            windowProduct *= arr[windowEnd];
+
+            // shrink until product becomes valid
+            while (!isProductLessThanK(windowProduct, k)) {
+                windowProduct /= arr[windowStart];
+                windowStart++;
+            }
+
+            /*
+             Now windowProduct < k
+            
+             All subarrays ending at windowEnd are valid:
+             [start...end], [start+1...end], ... [end...end]
+            
+             Number of such subarrays = window length
+            */
+            int windowLength = windowEnd - windowStart + 1;
+            subarrayCount += windowLength;
+
+            windowEnd++;
+        }
+
+        return subarrayCount;
+    }
+
+    private boolean isProductLessThanK(int windowProduct, int k) {
+        return windowProduct < k;
+    }
+}
