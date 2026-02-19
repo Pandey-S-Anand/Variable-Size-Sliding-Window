@@ -1,0 +1,175 @@
+//Bruteforce Approach
+
+class Solution {
+    /*
+    Goal:
+    Find the minimum length subarray whose sum ≥ target.
+    
+    Idea:
+    For each starting index, expand the subarray to the right
+    until the sum becomes ≥ target.
+    Once achieved, record the length and stop expanding further
+    from this start (because any longer subarray will only be longer).
+    
+    ---------------------------------------------------------------------------
+    IMPORTANT OPTIMIZATION
+    
+    If for some start index we never reach the target,
+    then all future start indices will also fail.
+    
+    Why?
+    Because array contains positive numbers.
+    Moving start forward only REMOVES elements from the sum,
+    so reaching target later is impossible.
+    
+    Hence we break outer loop early.
+    
+    ---------------------------------------------------------------------------
+    Example 1:
+        arr = [11,1,2,1,1], target = 11
+    
+        start=0 → sum=11 → success (length=1)
+        start=1 → sum keeps growing but never reaches 11
+    
+        Since start=1 fails, start=2,3,4 will also fail.
+        So breaking early avoids useless checks.
+    
+    ---------------------------------------------------------------------------
+    Example 2:
+        arr = [1,1,1,1,1], target = 11
+    
+        start=0 → fail
+        Immediately break outer loop
+        No need to try start=1..4
+    */
+
+    public int minSubArrayLen(int target, int[] arr) {
+        int subarraySum = 0;
+        int minLength = Integer.MAX_VALUE;
+        boolean isTargetAcheivable = false;
+
+        for (int start = 0; start < arr.length; start++) {
+
+            for (int end = start; end < arr.length; end++) {
+                subarraySum += arr[end];
+
+                if (subarraySum >= target) {
+                    int subarrayLength = end - start + 1;
+                    minLength = Math.min(minLength, subarrayLength);
+                    isTargetAcheivable = true;
+                    break;
+                }
+            }
+
+            if (!isTargetAcheivable) {
+                break;
+            }
+
+            // reset for next start index
+            isTargetAcheivable = false;
+            subarraySum = 0;
+        }
+
+        return minLength == Integer.MAX_VALUE ? 0 : minLength;
+    }
+}
+
+
+//Optimal Approach
+
+class Solution {
+    /*
+    Goal:
+    Find the smallest subarray whose sum ≥ target.
+    
+    ---------------------------------------------------------------------------
+    CORE DIFFERENCE FROM TRADITIONAL SLIDING WINDOW
+    
+    Typical sliding window (max length problems):
+        expand → window becomes INVALID → shrink to make it VALID again
+    
+    This problem (min length):
+        expand → window becomes VALID → shrink to make it INVALID again
+    
+    Why?
+    Because we want the SMALLEST valid window.
+    
+    So once a valid window is found, we aggressively shrink it
+    to remove unnecessary elements while it still satisfies the target.
+    
+    ---------------------------------------------------------------------------
+    WINDOW LOGIC
+    
+    1) Expand window by moving windowEnd and adding elements to sum
+    
+    2) When sum ≥ target:
+       - we found a valid candidate window
+       - update minimum length
+       - shrink from left to try making it smaller
+    
+    3) Stop shrinking when sum < target
+       → window becomes invalid again
+       → expand again
+    
+    This guarantees:
+    Every valid window is minimized before moving forward.
+    
+    ---------------------------------------------------------------------------
+    KEY IDEA
+    
+    Max window problems → shrink when invalid
+    Min window problems → shrink when valid
+    ===========================================================================
+    
+    IMPORTANT ASSUMPTION — WHY SLIDING WINDOW WORKS
+    
+    All numbers in the array are positive.
+    
+    This guarantees:
+    - Expanding the window (moving right) → sum always increases
+    - Shrinking the window (moving left) → sum always decreases
+    
+    So once sum ≥ target, moving forward will only increase the sum
+    and increase the window length as well.
+    Therefore we shrink from the left while the condition still holds,
+    to obtain the smallest possible valid subarray.
+    
+    If negative numbers were allowed:
+    Expanding the window could decrease the sum,
+    and shrinking could increase it.
+    
+    In that case we cannot deterministically adjust the window,
+    so sliding window approach would fail.
+    We would need prefix sum + binary search or other techniques instead.
+    */
+
+    public int minSubArrayLen(int target, int[] arr) {
+        int windowStart = 0;
+        int windowEnd = 0;
+        int windowSum = 0;
+        int minLength = Integer.MAX_VALUE;
+
+        while (windowEnd < arr.length) {
+            // expand window
+            windowSum += arr[windowEnd];
+
+            // shrink while valid to minimize the window
+            while (isValidWindow(windowSum, target)) {
+                int subarrayLength = windowEnd - windowStart + 1;
+                minLength = Math.min(minLength, subarrayLength);
+
+                // remove leftmost element to try smaller window
+                windowSum -= arr[windowStart++];
+            }
+
+            windowEnd++;
+        }
+
+        return minLength == Integer.MAX_VALUE ? 0 : minLength;
+    }
+
+    // window valid if sum reaches target
+    private boolean isValidWindow(int windowSum, int target) {
+        return windowSum >= target;
+    }
+}
