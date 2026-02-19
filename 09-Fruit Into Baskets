@@ -1,0 +1,118 @@
+//Bruteforce Approach
+
+class Solution {
+    /*
+    This problem can be translated to:
+    
+    "Find the longest subarray with at most 2 distinct elements"
+    
+    ---------------------------------------------------------------
+    
+    Understanding the statements:
+    
+    1) We have two baskets and each basket can store only one type of fruit
+       any number of times
+       → At most 2 distinct fruit types allowed
+    
+    2) Starting from any tree, we must continuously pick fruit moving right
+       → We are forming a contiguous subarray
+    
+    3) If a fruit type appears that cannot fit into the baskets, we stop
+       → Window becomes invalid when distinct types > 2
+    
+    4) Return the maximum fruits collected
+       → We need the longest valid subarray
+    
+    ---------------------------------------------------------------
+    
+    Therefore the problem reduces to:
+    Longest subarray containing at most 2 distinct elements
+    */
+    public int totalFruit(int[] arr) {
+        Map<Integer, Integer> freqMap = new HashMap<>();
+        int maxLength = 0;
+
+        // choose starting index of subarray
+        for (int start = 0; start < arr.length; start++) {
+
+            // expand subarray to the right
+            for (int end = start; end < arr.length; end++) {
+
+                // include current element into window frequency
+                freqMap.put(arr[end], freqMap.getOrDefault(arr[end], 0) + 1);
+
+                /*
+                 If distinct elements exceed allowed limit (2),
+                 no longer subarray from this start index can be valid.
+                 Further expansion will only keep or increase distinct count,
+                 so break early.
+                */
+                if (!withinDistinctLimit(freqMap)) {
+                    break;
+                }
+
+                // valid window → update maximum length
+                int subarrayLength = end - start + 1;
+                maxLength = Math.max(maxLength, subarrayLength);
+            }
+
+            // reset frequencies for next starting index
+            freqMap.clear();
+        }
+
+        return maxLength;
+    }
+
+    // window valid only if distinct elements ≤ 2
+    private boolean withinDistinctLimit(Map<Integer, Integer> freqMap) {
+        return freqMap.size() <= 2;
+    }
+}
+
+
+//Optimal Approach
+
+class Solution {
+    public int totalFruit(int[] arr) {
+        Map<Integer, Integer> freqMap = new HashMap<>();
+
+        int windowStart = 0;
+        int windowEnd = 0;
+        int maxLength = 0;
+
+        while (windowEnd < arr.length) {
+            // include current element in window
+            freqMap.put(arr[windowEnd], freqMap.getOrDefault(arr[windowEnd], 0) + 1);
+
+            /*
+             If window contains more than 2 distinct values,
+             shrink from the left until constraint is restored.
+             Removing elements decreases frequency and may
+             eliminate a distinct value completely.
+            */
+            while (!withinDistinctLimit(freqMap)) {
+                freqMap.put(arr[windowStart], freqMap.get(arr[windowStart]) - 1);
+
+                // remove key when its frequency becomes zero
+                if (freqMap.get(arr[windowStart]) == 0) {
+                    freqMap.remove(arr[windowStart]);
+                }
+
+                windowStart++; // shrink window
+            }
+
+            // window valid here → update longest length
+            int subarrayLength = windowEnd - windowStart + 1;
+            maxLength = Math.max(maxLength, subarrayLength);
+
+            windowEnd++; // expand window
+        }
+
+        return maxLength;
+    }
+
+    // window valid only if number of distinct elements ≤ 2
+    private boolean withinDistinctLimit(Map<Integer, Integer> freqMap) {
+        return freqMap.size() <= 2;
+    }
+}
