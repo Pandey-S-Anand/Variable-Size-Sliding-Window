@@ -1,3 +1,65 @@
+//Bruteforce Approach
+
+class Solution {
+    public int numberOfSubstrings(String str, int k) {
+        int validSubstringCount = 0;
+        int[] freqArr = new int[26];
+
+        for (int start = 0; start < str.length(); start++) {
+
+            for (int end = start; end < str.length(); end++) {
+
+                // include current character
+                freqArr[str.charAt(end) - 'a']++;
+
+                /*
+                As soon as a character frequency becomes ≥ k,
+                the current substring AND all longer substrings
+                starting at the same index will also be valid.
+                
+                Why?
+                Because adding more characters can only increase frequencies,
+                never decrease them.
+                
+                So instead of checking all longer substrings one by one,
+                we count them in one step.
+                
+                All substrings:
+                    [start ... end]
+                    [start ... end+1]
+                    [start ... end+2]
+                    ...
+                    [start ... n-1]
+                
+                are also valid.
+                
+                Count = remaining length = n - end
+                */
+                if (hasCharFreqAtLeastK(freqArr, k)) {
+                    validSubstringCount += (str.length() - end);
+                    break; // no need to extend further for this start
+                }
+            }
+
+            // reset frequency for next start index
+            Arrays.fill(freqArr, 0);
+        }
+
+        return validSubstringCount;
+    }
+
+    // returns true if any character appears ≥ k times
+    private boolean hasCharFreqAtLeastK(int[] freqArr, int k) {
+        for (int freq : freqArr) {
+            if (freq >= k) {
+                return true;
+            }
+        }
+        return false;
+    }
+}
+
+
 //Improved Approach
 
 class Solution {
