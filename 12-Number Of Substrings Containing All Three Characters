@@ -1,0 +1,128 @@
+//Bruteforce Approach
+
+class Solution {
+    public int numberOfSubstrings(String str) {
+        int validStringCount = 0;
+        int[] freqArr = new int[3]; // counts for a, b, c
+
+        for (int start = 0; start < str.length(); start++) {
+            for (int end = start; end < str.length(); end++) {
+                // include current character
+                freqArr[str.charAt(end) - 'a']++;
+
+                /*
+                As soon as a substring contains all three characters,
+                the current substring AND all longer substrings starting
+                from the same index will also remain valid.
+                
+                Why?
+                Because extending the substring cannot remove already
+                present characters.
+                
+                Once substring [start ... end] contains a, b, and c,
+                all substrings:
+                
+                    [start ... end]
+                    [start ... end+1]
+                    ...
+                    [start ... n-1]
+                
+                will also contain a, b, and c.
+                
+                So instead of checking each longer substring individually,
+                we count all of them in one step.
+                
+                Count = remaining length = n - end
+                */
+                if (hasAtLeastOneOccurrenceOfABC(freqArr)) {
+                    validStringCount += (str.length() - end);
+                    break; // no need to expand further for this start
+                }
+            }
+
+            // reset frequencies for next starting index
+            Arrays.fill(freqArr, 0);
+        }
+
+        return validStringCount;
+    }
+
+    // checks if window contains at least one 'a', 'b', and 'c'
+    private boolean hasAtLeastOneOccurrenceOfABC(int[] freqArr) {
+        for (int freq : freqArr) {
+            if (freq < 1) {
+                return false;
+            }
+        }
+        return true;
+    }
+}
+
+
+//Optimal Approach
+
+class Solution {
+    /*
+    COUNT SUBSTRINGS CONTAINING 'a', 'b', 'c'
+    
+    Idea:
+    We expand the window until it becomes VALID (contains at least one 'a', 'b', and 'c').
+    
+    Once valid:
+        every longer substring extending to the right will also remain valid.
+    
+    So for a fixed windowStart and current windowEnd:
+    
+        [start ... end]
+        [start ... end+1]
+        [start ... end+2]
+        ...
+        [start ... n-1]
+    
+    All are valid → count = n - end
+    
+    After counting them, we SHRINK the window
+    to make it invalid again.
+    
+    Why make it invalid?
+    Because we have already counted all substrings
+    starting at this start index.
+    
+    Now we move start forward to search for a NEW valid window
+    and capture a new set of substrings.
+    */
+
+    public int numberOfSubstrings(String str) {
+        int[] freqArr = new int[3];
+        int windowStart = 0;
+        int windowEnd = 0;
+        int validStringCount = 0;
+
+        while (windowEnd < str.length()) {
+            // include current character
+            freqArr[str.charAt(windowEnd) - 'a']++;
+
+            /*
+            While window is valid (contains a,b,c):
+            1) Count all substrings starting at windowStart
+               and ending at any index ≥ windowEnd and index <= str.length() - 1
+            2) Then shrink window to invalidate it so we can discover next valid window
+            */
+            while (isValidWindow(freqArr)) {
+                // all extensions to the right remain valid
+                validStringCount += (str.length() - windowEnd);
+                // shrink → remove current start character
+                freqArr[str.charAt(windowStart++) - 'a']--;
+            }
+
+            windowEnd++;
+        }
+
+        return validStringCount;
+    }
+
+    // window valid only if contains at least one 'a','b','c'
+    private boolean isValidWindow(int[] freqArr) {
+        return freqArr[0] > 0 && freqArr[1] > 0 && freqArr[2] > 0;
+    }
+}
