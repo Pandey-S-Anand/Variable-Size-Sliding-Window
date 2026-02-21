@@ -1,0 +1,129 @@
+//Bruteforce Approach
+
+class Solution {
+    public int numberOfSubarrays(int[] arr, int k) {
+        int oddNumberCount = 0;
+        int validSubarrayCount = 0;
+
+        for (int start = 0; start < arr.length; start++) {
+            for (int end = start; end < arr.length; end++) {
+                // include current element
+                if (arr[end] % 2 != 0) {
+                    oddNumberCount++;
+                }
+
+                // current subarray is valid → increment answer
+                if (oddNumberCount == k) {
+                    validSubarrayCount++;
+                }
+                /*
+                 If oddNumberCount > k
+                 → any longer subarray from the same start will also have > k odd numbers
+                      because adding elements cannot remove existing odds
+                      So no future extension can become valid again
+                 → break early for this start index
+                */
+                if (oddNumberCount > k) {
+                    break;
+                }
+            }
+
+            // reset for next starting index
+            oddNumberCount = 0;
+        }
+
+        return validSubarrayCount;
+    }
+}
+
+
+//Optimal Approach
+
+class Solution {
+    /*
+    COUNT SUBARRAYS WITH EXACTLY K ODD NUMBERS
+    
+    Direct sliding window for "exactly K" does NOT work.
+    
+    Why?
+    
+    Suppose current window has exactly K odd numbers:
+    
+       Expand right →
+           odd count may stay K  (valid)
+           OR become K+1 (invalid)
+    
+       Shrink left →
+           odd count may stay K
+           OR become K-1 (invalid)
+    
+    We cannot decide a consistent rule:
+    - When should we shrink?
+    - When should we expand?
+    
+    Condition is NON-MONOTONIC → sliding window breaks.
+    
+    ---------------------------------------------------------
+    
+    Instead we convert the problem:
+    
+       exactly(K) = atMost(K) - atMost(K-1)
+    
+    Because:
+    
+       atMost(K)
+       = subarrays with 0 odd + 1 odd + ... + K odd
+    
+       atMost(K-1)
+       = subarrays with 0 odd + 1 odd + ... + K-1 odd
+    
+    Subtract → leaves exactly K odd
+    
+    Now "at most K odd" IS monotonic:
+       if oddCount > K → shrinking always fixes it
+    
+    So sliding window works.
+    */
+    public int numberOfSubarrays(int[] arr, int k) {
+        return subarraysWithAtmostKOdd(arr, k) - subarraysWithAtmostKOdd(arr, k - 1);
+    }
+
+    private int subarraysWithAtmostKOdd(int[] arr, int k) {
+        int windowStart = 0;
+        int windowEnd = 0;
+        int oddCount = 0;
+        int validSubarrayCount = 0;
+
+        while (windowEnd < arr.length) {
+            // include new element
+            if (arr[windowEnd] % 2 != 0) {
+                oddCount++;
+            }
+
+            // shrink window if invalid
+            while (!hasAtmostKOdds(oddCount, k)) {
+                if (arr[windowStart] % 2 != 0) {
+                    oddCount--;
+                }
+                windowStart++;
+            }
+            /*
+            Window now has ≤ k odd numbers.
+            
+            All subarrays ending at 'windowEnd' and starting from
+            indices [windowStart ... windowEnd] are valid.
+            
+            Count added = window length
+            */
+            int windowLength = windowEnd - windowStart + 1;
+            validSubarrayCount += windowLength;
+            windowEnd++;
+        }
+
+        return validSubarrayCount;
+    }
+
+    private boolean hasAtmostKOdds(int oddCount, int k) {
+        return oddCount <= k;
+    }
+}
