@@ -1,0 +1,194 @@
+//Improved Approach
+
+class Solution {
+    /*
+    PROBLEM INTUITION
+    
+    We need substrings where: at least one character frequency ≥ k
+    ------------------------------------------------------------------
+    
+    Why normal sliding window does NOT work directly?
+    
+    Sliding window works when validity is monotonic:
+        invalid → shrink fixes it
+        valid   → expand keeps it valid
+    
+    But here validity is NON-MONOTONIC.
+    
+    Suppose current window already has a character with freq ≥ k.
+    Now what should we do?
+    
+        Expand right?
+            Might remain valid
+            But we may skip smaller valid substrings starting later
+    
+        Shrink left?
+            Might break the only character that had freq ≥ k
+    
+    So we cannot decide a consistent direction.
+    
+    → This breaks standard sliding window reasoning.
+    ------------------------------------------------------------------
+    
+    So we count the complement instead.
+    
+    Instead of counting:
+        substrings where ANY char freq ≥ k
+    
+    We count:
+        substrings where ALL char freq < k   (BAD substrings)
+    
+    This condition IS monotonic:
+        If any char reaches k → window invalid
+        Shrink until all freq < k again
+    
+    Finally:
+    
+        answer = total substrings - bad substrings
+    */
+
+    public int numberOfSubstrings(String str, int k) {
+        Map<Character, Integer> freqMap = new HashMap<>();
+        int windowStart = 0;
+        int windowEnd = 0;
+        int badStrings = 0;
+
+        while (windowEnd < str.length()) {
+            // include right character
+            char rightChar = str.charAt(windowEnd);
+            freqMap.put(rightChar, freqMap.getOrDefault(rightChar, 0) + 1);
+
+            /*
+            If any character frequency becomes ≥ k,
+            window is no longer a "bad substring".
+            So shrink until all frequencies < k again.
+            */
+            while (hasCharFreqAtLeastK(freqMap, k)) {
+                char leftChar = str.charAt(windowStart++);
+                freqMap.put(leftChar, freqMap.get(leftChar) - 1);
+
+                if (freqMap.get(leftChar) == 0) {
+                    freqMap.remove(leftChar);
+                }
+            }
+
+            /*
+            Now window contains only characters with freq < k
+            
+            All substrings ending at windowEnd and starting from
+            [windowStart ... windowEnd] are bad substrings.
+            
+            Count = window length
+            */
+            badStrings += (windowEnd - windowStart + 1);
+            windowEnd++;
+        }
+
+        // total substrings in string
+        int totalSubstrings = (str.length() * (str.length() + 1)) / 2;
+
+        // subtract bad substrings to get required substrings
+        return totalSubstrings - badStrings;
+    }
+
+    // returns true if ANY character frequency ≥ k
+    private boolean hasCharFreqAtLeastK(Map<Character, Integer> freqMap, int k) {
+        for (int freq : freqMap.values()) {
+            if (freq >= k) {
+                return true;
+            }
+        }
+        return false;
+    }
+}
+
+
+//Better Approach
+
+class Solution {
+    public int numberOfSubstrings(String str, int k) {
+        int[] freqArr = new int[26];
+        int windowStart = 0;
+        int windowEnd = 0;
+
+        int badStrings = 0;
+
+        while (windowEnd < str.length()) {
+            freqArr[str.charAt(windowEnd) - 'a']++;
+
+            while (hasCharFreqAtLeastK(freqArr, k)) {
+                freqArr[str.charAt(windowStart++) - 'a']--;
+            }
+
+            badStrings += (windowEnd - windowStart + 1);
+
+            windowEnd++;
+        }
+
+        int totalSubstrings = (str.length() * (str.length() + 1)) / 2;
+
+        return totalSubstrings - badStrings;
+    }
+
+    private boolean hasCharFreqAtLeastK(int[] freqArr, int k) {
+        for (int freq : freqArr) {
+            if (freq != 0 && freq >= k) {
+                return true;
+            }
+        }
+        return false;
+    }
+}
+
+
+//Optimal Approach
+
+class Solution {
+    public int numberOfSubstrings(String str, int k) {
+        int[] freqArr = new int[26];
+        int badSubstringCount = 0;
+
+        int windowStart = 0;
+        int windowEnd = 0;
+
+        // tracks if any character currently violates (freq >= k)
+        char violatingChar = 0;
+        int violatingFreq = 0;
+
+        while (windowEnd < str.length()) {
+            freqArr[str.charAt(windowEnd) - 'a']++;
+
+            /*
+            If a character frequency reaches k,
+            this window is no longer a "bad" window
+            */
+            if (freqArr[str.charAt(windowEnd) - 'a'] == k) {
+                violatingChar = str.charAt(windowEnd);
+                violatingFreq = k;
+            }
+
+            // Shrink until all characters have freq < k again
+            while (hasCharFreqAtLeastK(violatingFreq, k)) {
+                freqArr[str.charAt(windowStart) - 'a']--;
+
+                // if the violating character is reduced, violation disappears
+                if (str.charAt(windowStart) == violatingChar) {
+                    violatingFreq--;
+                }
+
+                windowStart++;
+            }
+
+            badSubstringCount += (windowEnd - windowStart + 1);
+            windowEnd++;
+        }
+
+        int totalSubstrings = (str.length() * (str.length() + 1)) / 2;
+
+        return totalSubstrings - badSubstringCount;
+    }
+
+    private boolean hasCharFreqAtLeastK(int violatingFreq, int k) {
+        return violatingFreq >= k;
+    }
+}
