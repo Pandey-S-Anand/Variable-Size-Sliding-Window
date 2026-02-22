@@ -1,0 +1,159 @@
+//Bruteforce Approach
+
+class Solution {
+    public int numSubarraysWithSum(int[] arr, int goal) {
+        int subarraySum = 0;
+        int validSubarrayCount = 0;
+
+        for (int start = 0; start < arr.length; start++) {
+            for (int end = start; end < arr.length; end++) {
+
+                // include current element
+                subarraySum += arr[end];
+
+                // valid subarray found
+                if (subarraySum == goal) {
+                    validSubarrayCount++;
+                }
+
+                /*
+                 If sum exceeds goal,
+                 extending further will only increase sum
+                 (since elements are non-negative).
+                 So no need to continue for this start.
+                */
+                if (subarraySum > goal) {
+                    break;
+                }
+            }
+
+            // reset for next starting index
+            subarraySum = 0;
+        }
+
+        return validSubarrayCount;
+    }
+}
+
+
+// Optimal Approach
+
+class Solution {
+    /*
+    COUNT SUBARRAYS WITH SUM = GOAL (Binary array: only 0 and 1)
+    
+    ------------------------------------------------------------------
+    WHY NOT DIRECT SLIDING WINDOW FOR sum == goal ?
+    
+    Suppose current window sum == goal
+    
+        Expand right →
+            sum may stay same (add 0)
+            OR increase (add 1 → invalid)
+    
+        Shrink left →
+            sum may stay same (remove 0)
+            OR decrease (remove 1 → invalid)
+    
+    We cannot decide a consistent action:
+        - sometimes expand
+        - sometimes shrink
+    
+    Condition is NON-MONOTONIC → sliding window breaks.
+    
+    ------------------------------------------------------------------
+    TRANSFORMATION
+    
+        exact(goal) = atMost(goal) - atMost(goal - 1)
+    
+    Because:
+    
+        atMost(goal)
+        = subarrays with sum 0 + 1 + 2 + ... + goal
+    
+        atMost(goal-1)
+        = subarrays with sum 0 + 1 + 2 + ... + goal-1
+    
+    Subtract → leaves only sum == goal
+    
+    ------------------------------------------------------------------
+    WHY THIS WORKS ONLY FOR NON-NEGATIVE (0/1) ARRAYS?
+    
+    When numbers are non-negative:
+        Expanding window → sum never decreases
+        Shrinking window → sum never increases
+    
+    So if sum > k → shrinking will ALWAYS fix it
+    
+    This makes "sum ≤ k" MONOTONIC → sliding window valid
+    
+    If negative numbers existed:
+        expanding could reduce sum
+        shrinking could increase sum
+    → sliding window would completely fail
+    */
+
+    public int numSubarraysWithSum(int[] arr, int goal) {
+        /*
+         Special case when goal = 0.
+        
+         We normally compute:
+             exact(goal) = atMost(goal) - atMost(goal - 1)
+        
+         But for goal = 0:
+             atMost(-1) is meaningless.
+        
+         Since the array is binary (only 0 and 1),
+         the subarray sum can never be negative.
+        
+         Therefore:
+             atMost(0) already represents subarrays whose sum is exactly 0
+        
+         Example:
+             arr = {0,0,0,0}, goal = 0
+        
+         Any valid subarray must contain only zeros.
+         Sum can never be < 0, so "≤ 0" automatically means "= 0".
+        */
+
+        if (goal == 0) {
+            return countSubarraysWithSumAtMostK(arr, goal);
+        }
+
+        return countSubarraysWithSumAtMostK(arr, goal) - countSubarraysWithSumAtMostK(arr, goal - 1);
+    }
+
+    private int countSubarraysWithSumAtMostK(int[] arr, int k) {
+        int windowStart = 0;
+        int windowEnd = 0;
+        int windowSum = 0;
+        int validSubarrayCount = 0;
+
+        while (windowEnd < arr.length) {
+            windowSum += arr[windowEnd];
+
+            // shrink while sum exceeds allowed limit
+            while (!hasAtmostSumK(windowSum, k)) {
+                windowSum -= arr[windowStart++];
+            }
+
+            /*
+            Window now has sum ≤ k
+            
+            All subarrays ending at 'windowEnd' and starting from
+            indices [windowStart ... windowEnd] are valid
+            
+            Count added = window length
+            */
+            int windowSize = windowEnd - windowStart + 1;
+            validSubarrayCount += windowSize;
+            windowEnd++;
+        }
+
+        return validSubarrayCount;
+    }
+
+    private boolean hasAtmostSumK(int windowSum, int k) {
+        return windowSum <= k;
+    }
+}
