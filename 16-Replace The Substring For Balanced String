@@ -1,0 +1,146 @@
+//Bruterforce Approach
+
+class Solution {
+    /*
+    INTUITION
+    
+    A string is balanced when every character appears exactly n/4 times.
+    
+    If some characters exceed n/4,
+    it means those extra characters are occupying the slots
+    that should have been used by other required characters.
+    
+    In other words:
+    These excess characters are the reason the string is unbalanced.
+    
+    So if we can find a minimum-length substring that contains
+    ALL the extra characters, we can replace that substring
+    with the required characters in correct proportion.
+    
+    Once we remove (replace) all excess characters with the required chars,
+    the remaining part of the string automatically satisfies
+    the balanced condition.
+    
+    Therefore, the problem reduces to:
+    
+    "Find the minimum window that covers all excess characters."
+    */
+    public int balancedString(String str) {
+        int requiredFreq = str.length() / 4;
+
+        // freqArr → stores total frequency of each character
+        int[] freqArr = new int[26];
+
+        // extraChars → stores how many extra occurrences must be covered
+        int[] extraChars = new int[26];
+
+        boolean alreadyBalanced = true;
+
+        /*
+        Count total frequencies.
+        If any character exceeds requiredFreq,
+        mark the extra count in extraChars.
+        */
+        for (int i = 0; i < str.length(); i++) {
+            int idx = str.charAt(i) - 'A';
+            freqArr[idx]++;
+
+            if (freqArr[idx] > requiredFreq) {
+                extraChars[idx]++;
+                alreadyBalanced = false;
+            }
+        }
+
+        // If no character exceeded required frequency, string is already balanced.
+        if (alreadyBalanced) {
+            return 0;
+        }
+
+        int minWindowLength = Integer.MAX_VALUE;
+
+        /*
+        Try every possible substring.
+        For each (start, end), check if it covers all extra characters.
+        */
+        for (int start = 0; start < str.length(); start++) {
+            for (int end = start; end < str.length(); end++) {
+                /*
+                We DO NOT break once we find a valid window.
+                
+                Reason:
+                
+                Although current window works,
+                there may exist a smaller valid window
+                starting from a later index.
+                
+                Example:
+                str = "WQQQ"
+                
+                freq:
+                W = 1
+                Q = 3
+                
+                requiredFreq = 1 (since n = 4)
+                
+                Extra characters:
+                Q has 2 extra occurrences.
+                
+                When start = 0:
+                    window [0..2] = "WQQ" → valid (length 3)
+                
+                But when start = 1:
+                    window [1..2] = "QQ" → valid (length 2)
+                
+                This smaller window covers all extra Q's.
+                
+                If we replace "QQ" with "ER",
+                the string becomes balanced:
+                W E R Q  (each appears once)
+                
+                So if we stopped at the first valid window,
+                we would miss a smaller valid answer.
+                
+                Hence we must continue exploring all possibilities.
+                */
+                if (coversAllExtras(str, start, end, extraChars)) {
+                    int windowLength = end - start + 1;
+                    minWindowLength = Math.min(minWindowLength, windowLength);
+                }
+            }
+        }
+
+        return minWindowLength;
+    }
+
+    /*
+    Checks whether substring [startIdx, endIdx]
+    contains all required extra characters.
+    
+    We clone extraChars to avoid modifying original requirement.
+    Then we reduce counts as we see matching characters in window.
+    If after scanning window any extra > 0 remains,
+    window does NOT fully cover required excess.
+    */
+    private boolean coversAllExtras(String str, int startIdx, int endIdx, int[] extraChars) {
+        // clone to avoid modifying original 'extraChars'
+        extraChars = extraChars.clone();
+
+        // reduce required extras using characters in window
+        for (int i = startIdx; i <= endIdx; i++) {
+            int idx = str.charAt(i) - 'A';
+
+            if (extraChars[idx] > 0) {
+                extraChars[idx]--;
+            }
+        }
+
+        // verify if all required extras are satisfied
+        for (int freq : extraChars) {
+            if (freq > 0) {
+                return false;
+            }
+        }
+
+        return true;
+    }
+}
