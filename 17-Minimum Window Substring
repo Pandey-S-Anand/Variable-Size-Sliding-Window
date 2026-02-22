@@ -1,0 +1,88 @@
+//Bruteforce Approach
+
+class Solution {
+    public String minWindow(String text, String pattern) {
+        /**
+         * Build frequency map of pattern characters.
+         * This tells us how many times each character
+         * must appear inside a valid window of the text.
+         */
+        Map<Character, Integer> patternFreqMap = new HashMap<>();
+        for (int i = 0; i < pattern.length(); i++) {
+            char ch = pattern.charAt(i);
+            patternFreqMap.put(ch, patternFreqMap.getOrDefault(ch, 0) + 1);
+        }
+
+        /**
+         * This map will store frequencies of characters
+         * inside the current window of the text.
+         */
+        Map<Character, Integer> textFreqMap = new HashMap<>();
+
+        int minLength = Integer.MAX_VALUE;
+        int bestStart = -1;
+        int bestEnd = -1;
+
+        for (int start = 0; start < text.length(); start++) {
+            for (int end = start; end < text.length(); end++) {
+                // Include current character in window
+                char ch = text.charAt(end);
+                textFreqMap.put(ch, textFreqMap.getOrDefault(ch, 0) + 1);
+
+                int windowLength = end - start + 1;
+
+                /**
+                 * Optimization:
+                 * If window size is smaller than pattern length,
+                 * it cannot contain all the characters of pattern.
+                 */
+                if (windowLength < pattern.length()) {
+                    continue;
+                }
+
+                // Check if current window satisfies pattern requirement
+                if (containsPattern(textFreqMap, patternFreqMap)) {
+                    // Update minimum window if smaller
+                    if (windowLength < minLength) {
+                        minLength = windowLength;
+                        bestStart = start;
+                        bestEnd = end;
+                    }
+
+                    /**
+                     * Important:
+                     * For this fixed start index,
+                     * further expansion will only increase window size.
+                     * Since we already found a valid window,
+                     * no need to expand further.
+                     */
+                    break;
+                }
+            }
+
+            // Reset window frequency map before trying next start index.
+            textFreqMap.clear();
+        }
+
+        /**
+         * If no valid window found, return empty string.
+         * Otherwise return smallest valid substring.
+         */
+        return minLength == Integer.MAX_VALUE ? "" : text.substring(bestStart, bestEnd + 1);
+    }
+
+    /**
+     * Checks whether the current window contains
+     * all required characters of the pattern
+     * with correct frequency.
+     */
+    private boolean containsPattern(Map<Character, Integer> textFreqMap, Map<Character, Integer> patternFreqMap) {
+        for (char ch : patternFreqMap.keySet()) {
+            if (!textFreqMap.containsKey(ch) || textFreqMap.get(ch) < patternFreqMap.get(ch)) {
+                return false; // If a character is missing from the window or its count is less than needed, return false
+            }
+        }
+
+        return true;
+    }
+}
