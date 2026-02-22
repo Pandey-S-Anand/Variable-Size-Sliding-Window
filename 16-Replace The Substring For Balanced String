@@ -179,37 +179,75 @@ class Solution {
 
 
 
-//Better Approach
+//Optimal Approach
 
 class Solution {
+    /*
+    CORE IDEA (Switch in Thinking)
+    
+    Instead of finding a window that directly contains all extra characters,
+    we maintain frequencies of characters OUTSIDE the window.
+    
+    Key Identity:
+       totalFrequency = outsideFrequency + insideFrequency
+    
+    Meaning:
+    If no character outside the window exceeds the required limit,
+    then all extra characters must already be inside the window.
+    
+    Therefore:
+    Window = substring we will replace
+    Outside = part that must not contain any excess characters
+    
+    Once outside is valid (no extra chars outside) i.e extra chars are inside the window,
+    we try to shrink the window to get minimum length.
+    */
     public int balancedString(String str) {
-        int requiredFreq = str.length() / 4;
+        int reqFreq = str.length() / 4;
+
         int[] freqArr = new int[26];
-        int[] extraChars = new int[26];
 
-        boolean alreadyBalanced = true;
-
+        // Count total frequencies
         for (int i = 0; i < str.length(); i++) {
-            int idx = str.charAt(i) - 'A';
-            freqArr[idx]++;
-            if (freqArr[idx] > requiredFreq) {
-                extraChars[idx]++;
-                alreadyBalanced = false;
-            }
+            freqArr[str.charAt(i) - 'A']++;
         }
-
-        if (alreadyBalanced) {
+        
+        // If already balanced → no replacement needed
+        if (freqArr['Q' - 'A'] == reqFreq && freqArr['W' - 'A'] == reqFreq && freqArr['E' - 'A'] == reqFreq && freqArr['R' - 'A'] == reqFreq) {
             return 0;
         }
 
-        int minWindowLength = Integer.MAX_VALUE;
         int windowStart = 0;
         int windowEnd = 0;
+        int minWindowLength = Integer.MAX_VALUE;
 
         while (windowEnd < str.length()) {
-            while (coversAllExtras(str, windowStart, windowEnd, extraChars)) {
+            /*
+            Expand window:
+            Remove current character from outside
+            (i.e include it in window)
+            */
+            freqArr[str.charAt(windowEnd) - 'A']--;
+            /*
+            If outside has no extra characters,
+            it means all extra characters are inside window.
+            
+            Why?
+            totalFreq = outsideFreq + insideFreq
+            
+            If outsideFreq <= requiredFreq
+            then insideFreq must contain the surplus.
+            */
+            while (hasNoExcessOutside(freqArr, reqFreq)) {
+                // current window is valid → update answer
                 int windowLength = windowEnd - windowStart + 1;
                 minWindowLength = Math.min(minWindowLength, windowLength);
+                /*
+                Try shrinking to get smaller valid window.
+                Shrinking means moving a character back to outside.
+                This may break validity.
+                */
+                freqArr[str.charAt(windowStart) - 'A']++;
                 windowStart++;
             }
             windowEnd++;
@@ -218,26 +256,11 @@ class Solution {
         return minWindowLength;
     }
 
-    private boolean coversAllExtras(String str, int windowStart, int windowEnd, int[] extraChars) {
-        // clone to avoid modifying original 'extraChars'
-        extraChars = extraChars.clone();
-
-        // reduce required extras using characters in window
-        for (int i = windowStart; i <= windowEnd; i++) {
-            int idx = str.charAt(i) - 'A';
-
-            if (extraChars[idx] > 0) {
-                extraChars[idx]--;
-            }
-        }
-
-        // verify if all required extras are satisfied
-        for (int freq : extraChars) {
-            if (freq > 0) {
-                return false;
-            }
-        }
-
-        return true;
+    /*
+    Outside is valid when no character exceeds required frequency.
+    This ensures no extra characters remain outside the window.
+    */
+    private boolean hasNoExcessOutside(int[] freqArr, int reqFreq) {
+        return freqArr['Q' - 'A'] <= reqFreq && freqArr['W' - 'A'] <= reqFreq && freqArr['E' - 'A'] <= reqFreq && freqArr['R' - 'A'] <= reqFreq;
     }
 }
