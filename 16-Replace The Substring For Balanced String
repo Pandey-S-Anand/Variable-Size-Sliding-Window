@@ -24,6 +24,38 @@ class Solution {
     Therefore, the problem reduces to:
     
     "Find the minimum window that covers all excess characters."
+    
+    NOTE:
+    
+    Minimum window does NOT necessarily contain only extra characters.
+    
+    Example:
+    s = "QEQEQWQWWQRQ"
+    n = 12
+    requiredFreq = 3
+    
+    Q = 6 → 3 extra
+    W = 3
+    E = 2
+    R = 1
+    
+    We must cover 3 Q’s.
+    
+    One possible minimal window:
+    "QEQEQ"
+    
+    This window contains:
+    Q = 3 (required extra)
+    E = 2 (not extra)
+    
+    So window may include non-extra characters
+    if extra characters are interleaved.
+    
+    Condition is NOT:
+    "window contains only extra characters"
+    
+    Condition is:
+    "window contains at least all extra characters"
     */
     public int balancedString(String str) {
         int requiredFreq = str.length() / 4;
@@ -127,6 +159,71 @@ class Solution {
 
         // reduce required extras using characters in window
         for (int i = startIdx; i <= endIdx; i++) {
+            int idx = str.charAt(i) - 'A';
+
+            if (extraChars[idx] > 0) {
+                extraChars[idx]--;
+            }
+        }
+
+        // verify if all required extras are satisfied
+        for (int freq : extraChars) {
+            if (freq > 0) {
+                return false;
+            }
+        }
+
+        return true;
+    }
+}
+
+
+
+//Better Approach
+
+class Solution {
+    public int balancedString(String str) {
+        int requiredFreq = str.length() / 4;
+        int[] freqArr = new int[26];
+        int[] extraChars = new int[26];
+
+        boolean alreadyBalanced = true;
+
+        for (int i = 0; i < str.length(); i++) {
+            int idx = str.charAt(i) - 'A';
+            freqArr[idx]++;
+            if (freqArr[idx] > requiredFreq) {
+                extraChars[idx]++;
+                alreadyBalanced = false;
+            }
+        }
+
+        if (alreadyBalanced) {
+            return 0;
+        }
+
+        int minWindowLength = Integer.MAX_VALUE;
+        int windowStart = 0;
+        int windowEnd = 0;
+
+        while (windowEnd < str.length()) {
+            while (coversAllExtras(str, windowStart, windowEnd, extraChars)) {
+                int windowLength = windowEnd - windowStart + 1;
+                minWindowLength = Math.min(minWindowLength, windowLength);
+                windowStart++;
+            }
+            windowEnd++;
+        }
+
+        return minWindowLength;
+    }
+
+    private boolean coversAllExtras(String str, int windowStart, int windowEnd, int[] extraChars) {
+        // clone to avoid modifying original 'extraChars'
+        extraChars = extraChars.clone();
+
+        // reduce required extras using characters in window
+        for (int i = windowStart; i <= windowEnd; i++) {
             int idx = str.charAt(i) - 'A';
 
             if (extraChars[idx] > 0) {
