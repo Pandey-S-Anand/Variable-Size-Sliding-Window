@@ -29,7 +29,7 @@ class Solution {
     Longest subarray containing at most 2 distinct elements
     */
     public int totalFruit(int[] arr) {
-        Map<Integer, Integer> freqMap = new HashMap<>();
+        Map<Integer, Integer> windowFreqMap = new HashMap<>();
         int maxLength = 0;
 
         // choose starting index of subarray
@@ -39,7 +39,7 @@ class Solution {
             for (int end = start; end < arr.length; end++) {
 
                 // include current element into window frequency
-                freqMap.put(arr[end], freqMap.getOrDefault(arr[end], 0) + 1);
+                windowFreqMap.put(arr[end], windowFreqMap.getOrDefault(arr[end], 0) + 1);
 
                 /*
                  If distinct elements exceed allowed limit (2),
@@ -47,25 +47,25 @@ class Solution {
                  Further expansion will only keep or increase distinct count,
                  so break early.
                 */
-                if (!withinDistinctLimit(freqMap)) {
+                if (!withinDistinctLimit(windowFreqMap)) {
                     break;
                 }
 
                 // valid window → update maximum length
-                int subarrayLength = end - start + 1;
-                maxLength = Math.max(maxLength, subarrayLength);
+                int windowSize = end - start + 1;
+                maxLength = Math.max(maxLength, windowSize);
             }
 
             // reset frequencies for next starting index
-            freqMap.clear();
+            windowFreqMap.clear();
         }
 
         return maxLength;
     }
 
     // window valid only if distinct elements ≤ 2
-    private boolean withinDistinctLimit(Map<Integer, Integer> freqMap) {
-        return freqMap.size() <= 2;
+    private boolean withinDistinctLimit(Map<Integer, Integer> windowFreqMap) {
+        return windowFreqMap.size() <= 2;
     }
 }
 
@@ -74,7 +74,7 @@ class Solution {
 
 class Solution {
     public int totalFruit(int[] arr) {
-        Map<Integer, Integer> freqMap = new HashMap<>();
+        Map<Integer, Integer> windowFreqMap = new HashMap<>();
 
         int windowStart = 0;
         int windowEnd = 0;
@@ -82,7 +82,7 @@ class Solution {
 
         while (windowEnd < arr.length) {
             // include current element in window
-            freqMap.put(arr[windowEnd], freqMap.getOrDefault(arr[windowEnd], 0) + 1);
+            windowFreqMap.put(arr[windowEnd], windowFreqMap.getOrDefault(arr[windowEnd], 0) + 1);
 
             /*
              If window contains more than 2 distinct values,
@@ -90,20 +90,20 @@ class Solution {
              Removing elements decreases frequency and may
              eliminate a distinct value completely.
             */
-            while (!withinDistinctLimit(freqMap)) {
-                freqMap.put(arr[windowStart], freqMap.get(arr[windowStart]) - 1);
+            while (!withinDistinctLimit(windowFreqMap)) {
+                windowFreqMap.put(arr[windowStart], windowFreqMap.get(arr[windowStart]) - 1);
 
                 // remove key when its frequency becomes zero
-                if (freqMap.get(arr[windowStart]) == 0) {
-                    freqMap.remove(arr[windowStart]);
+                if (windowFreqMap.get(arr[windowStart]) == 0) {
+                    windowFreqMap.remove(arr[windowStart]);
                 }
 
                 windowStart++; // shrink window
             }
 
             // window valid here → update longest length
-            int subarrayLength = windowEnd - windowStart + 1;
-            maxLength = Math.max(maxLength, subarrayLength);
+            int windowSize = windowEnd - windowStart + 1;
+            maxLength = Math.max(maxLength, windowSize);
 
             windowEnd++; // expand window
         }
@@ -112,7 +112,7 @@ class Solution {
     }
 
     // window valid only if number of distinct elements ≤ 2
-    private boolean withinDistinctLimit(Map<Integer, Integer> freqMap) {
-        return freqMap.size() <= 2;
+    private boolean withinDistinctLimit(Map<Integer, Integer> windowFreqMap) {
+        return windowFreqMap.size() <= 2;
     }
 }
