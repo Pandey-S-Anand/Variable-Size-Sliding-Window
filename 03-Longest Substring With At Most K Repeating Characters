@@ -2,7 +2,7 @@
 
 class Solution {
     public int longestSubstringAtMostKRepeats(String str, int k) {
-        int[] freqArr = new int[26];
+        int[] windowFreqArr = new int[26];
         int maxLength = 0;
 
         // choose starting index
@@ -12,14 +12,14 @@ class Solution {
             for (int end = start; end < str.length(); end++) {
 
                 // include current character in substring
-                freqArr[str.charAt(end) - 'a']++;
+                windowFreqArr[str.charAt(end) - 'a']++;
 
                 /*
                  If any character frequency exceeds k,
                  current substring and all longer substrings
                  from this start index will remain invalid.
                 */
-                if (!isWithinKFrequencyLimit(freqArr, k)) {
+                if (!isWithinKFrequencyLimit(windowFreqArr, k)) {
                     break;
                 }
 
@@ -29,16 +29,16 @@ class Solution {
             }
 
             // reset frequencies for next starting index
-            Arrays.fill(freqArr, 0);
+            Arrays.fill(windowFreqArr, 0);
         }
 
         return maxLength;
     }
 
     // valid only if every character appears at most k times
-    private boolean isWithinKFrequencyLimit(int[] freqArr, int k) {
+    private boolean isWithinKFrequencyLimit(int[] windowFreqArr, int k) {
         for (int i = 0; i < 26; i++) {
-            if (freqArr[i] > k) {
+            if (windowFreqArr[i] > k) {
                 return false;
             }
         }
@@ -51,22 +51,22 @@ class Solution {
 
 public class Solution {
     public int longestSubstringAtMostKRepeats(String str, int k) {
-        int[] freqArr = new int[26]; // frequency of characters in current window
+        int[] windowFreqArr = new int[26]; // frequency of characters in current window
         int windowStart = 0;
         int windowEnd = 0;
         int maxLength = 0;
 
         while (windowEnd < str.length()) {
             // include current character in window
-            freqArr[str.charAt(windowEnd) - 'a']++;
+            windowFreqArr[str.charAt(windowEnd) - 'a']++;
 
             /*
              If any character frequency exceeds k,
              shrink window from left until condition restored.
              Removing characters reduces frequency and fixes violation.
             */
-            while (!isWithinKFrequencyLimit(freqArr, k)) {
-                freqArr[str.charAt(windowStart) - 'a']--;
+            while (!isWithinKFrequencyLimit(windowFreqArr, k)) {
+                windowFreqArr[str.charAt(windowStart) - 'a']--;
                 windowStart++;
             }
 
@@ -87,9 +87,9 @@ public class Solution {
     Violation condition:
         any freq > k → invalid window
     */
-    private boolean isWithinKFrequencyLimit(int[] freqArr, int k) {
+    private boolean isWithinKFrequencyLimit(int[] windowFreqArr, int k) {
         for (int i = 0; i < 26; i++) {
-            if (freqArr[i] > k) {
+            if (windowFreqArr[i] > k) {
                 return false;
             }
         }
@@ -127,8 +127,8 @@ class Solution {
     would incorrectly update badCharsInWindow and break the window invariant.
     */
 
-    public int longestSubstringAtMostKRepeats(String str, int k) {
-        int[] freqArr = new int[26];
+	private int longestSubstringAtMostKRepeats(String str, int k) {
+        int[] windowFreqArr = new int[26];
         int windowStart = 0, windowEnd = 0;
         int maxLength = 0;
 
@@ -136,11 +136,11 @@ class Solution {
 
         while (windowEnd < str.length()) {
             // include new character into window
-            int rightChar = str.charAt(windowEnd) - 'a';
-            freqArr[rightChar]++;
+            int incomingChar = str.charAt(windowEnd) - 'a';
+            windowFreqArr[incomingChar]++;
 
             // if this char just crossed allowed limit → mark violation
-            if (freqArr[rightChar] == k + 1) {
+            if (windowFreqArr[incomingChar] == k + 1) {
                 badCharsInWindow++;
             }
 
@@ -149,11 +149,11 @@ class Solution {
              shrink from left until all violations removed
             */
             while (!isWithinKFrequencyLimit(badCharsInWindow)) {
-                int leftChar = str.charAt(windowStart) - 'a';
-                freqArr[leftChar]--;
+                int outgoingChar = str.charAt(windowStart) - 'a';
+                windowFreqArr[outgoingChar]--;
 
                 // if a violating char becomes valid again
-                if (freqArr[leftChar] == k) {
+                if (windowFreqArr[outgoingChar] == k) {
                     badCharsInWindow--;
                 }
 
