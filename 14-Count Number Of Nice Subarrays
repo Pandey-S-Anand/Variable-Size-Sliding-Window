@@ -2,34 +2,34 @@
 
 class Solution {
     public int numberOfSubarrays(int[] arr, int k) {
-        int oddNumberCount = 0;
+        int windowOddCount = 0;
         int validSubarrayCount = 0;
 
         for (int start = 0; start < arr.length; start++) {
             for (int end = start; end < arr.length; end++) {
                 // include current element
                 if (arr[end] % 2 != 0) {
-                    oddNumberCount++;
+                    windowOddCount++;
                 }
 
                 // current subarray is valid → increment answer
-                if (oddNumberCount == k) {
+                if (windowOddCount == k) {
                     validSubarrayCount++;
                 }
                 /*
-                 If oddNumberCount > k
+                 If windowOddCount > k
                  → any longer subarray from the same start will also have > k odd numbers
                       because adding elements cannot remove existing odds
                       So no future extension can become valid again
                  → break early for this start index
                 */
-                if (oddNumberCount > k) {
+                if (windowOddCount > k) {
                     break;
                 }
             }
 
             // reset for next starting index
-            oddNumberCount = 0;
+            windowOddCount = 0;
         }
 
         return validSubarrayCount;
@@ -71,11 +71,9 @@ class Solution {
     
     Because:
     
-       atMost(K)
-       = subarrays with 0 odd + 1 odd + ... + K odd
+       atMost(K) odd number = subarrays with 0 odd + 1 odd + ... + K odd
     
-       atMost(K-1)
-       = subarrays with 0 odd + 1 odd + ... + K-1 odd
+       atMost(K-1) odd number = subarrays with 0 odd + 1 odd + ... + K-1 odd
     
     Subtract → leaves exactly K odd
     
@@ -91,19 +89,19 @@ class Solution {
     private int subarraysWithAtmostKOdd(int[] arr, int k) {
         int windowStart = 0;
         int windowEnd = 0;
-        int oddCount = 0;
+        int windowOddCount = 0;
         int validSubarrayCount = 0;
 
         while (windowEnd < arr.length) {
             // include new element
             if (arr[windowEnd] % 2 != 0) {
-                oddCount++;
+                windowOddCount++;
             }
 
             // shrink window if invalid
-            while (!hasAtmostKOdds(oddCount, k)) {
+            while (!hasAtmostKOdds(windowOddCount, k)) {
                 if (arr[windowStart] % 2 != 0) {
-                    oddCount--;
+                    windowOddCount--;
                 }
                 windowStart++;
             }
@@ -115,15 +113,15 @@ class Solution {
             
             Count added = window length
             */
-            int windowLength = windowEnd - windowStart + 1;
-            validSubarrayCount += windowLength;
+            int windowSize = windowEnd - windowStart + 1;
+            validSubarrayCount += windowSize;
             windowEnd++;
         }
 
         return validSubarrayCount;
     }
 
-    private boolean hasAtmostKOdds(int oddCount, int k) {
-        return oddCount <= k;
+    private boolean hasAtmostKOdds(int windowOddCount, int k) {
+        return windowOddCount <= k;
     }
 }
