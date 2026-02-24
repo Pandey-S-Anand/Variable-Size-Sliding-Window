@@ -72,22 +72,33 @@ class Solution {
     Hence sliding window works (monotonic behavior)
     
     ---------------------------------------------------------------------------
+    ===============================================================================
     IMPORTANT EDGE CASE
+    ===============================================================================
+    
+    As per problem constraints:
+    0 <= k <= 10^6
+    and 1 <= arr[i]
     
     If k <= 1:
-        No valid subarray can exist.
+    No valid subarray can exist.
     
-    Why?
-        Smallest possible product = 1 (since arr[i] ≥ 1)
+    Reason:
     
-        So product can never be:
-            < 1
-            < 0
+    The smallest possible product of any non-empty subarray is 1
+    (because every element in the array is ≥ 1).
     
-    Therefore answer must be 0.
+    So the product of any subarray can never be:
+    < 1
+    
+    Therefore:
+    If k is 0 or 1,
+    it is impossible to find a subarray whose product is strictly less than k.
+    
+    Hence, the answer must be 0.
+    
     ===========================================================================
     */
-
     public int numSubarrayProductLessThanK(int[] arr, int k) {
         // No product of positive integers can be < 1
         if (k <= 1) {
@@ -115,10 +126,10 @@ class Solution {
              All subarrays ending at windowEnd are valid:
              [start...end], [start+1...end], ... [end...end]
             
-             Number of such subarrays = window length
+             Number of such subarrays = window size
             */
-            int windowLength = windowEnd - windowStart + 1;
-            subarrayCount += windowLength;
+            int windowSize = windowEnd - windowStart + 1;
+            subarrayCount += windowSize;
 
             windowEnd++;
         }
