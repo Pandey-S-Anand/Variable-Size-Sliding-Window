@@ -17,7 +17,7 @@ class Solution {
          * This map will store frequencies of characters
          * inside the current window of the text.
          */
-        Map<Character, Integer> textFreqMap = new HashMap<>();
+        Map<Character, Integer> windowFreqMap = new HashMap<>();
 
         int minLength = Integer.MAX_VALUE;
         int bestStart = -1;
@@ -27,7 +27,7 @@ class Solution {
             for (int end = start; end < text.length(); end++) {
                 // Include current character in window
                 char ch = text.charAt(end);
-                textFreqMap.put(ch, textFreqMap.getOrDefault(ch, 0) + 1);
+                windowFreqMap.put(ch, windowFreqMap.getOrDefault(ch, 0) + 1);
 
                 int windowLength = end - start + 1;
 
@@ -41,7 +41,7 @@ class Solution {
                 }
 
                 // Check if current window satisfies pattern requirement
-                if (containsPattern(textFreqMap, patternFreqMap)) {
+                if (containsPattern(windowFreqMap, patternFreqMap)) {
                     // Update minimum window if smaller
                     if (windowLength < minLength) {
                         minLength = windowLength;
@@ -61,7 +61,7 @@ class Solution {
             }
 
             // Reset window frequency map before trying next start index.
-            textFreqMap.clear();
+            windowFreqMap.clear();
         }
 
         /**
@@ -76,9 +76,9 @@ class Solution {
      * all required characters of the pattern
      * with correct frequency.
      */
-    private boolean containsPattern(Map<Character, Integer> textFreqMap, Map<Character, Integer> patternFreqMap) {
+    private boolean containsPattern(Map<Character, Integer> windowFreqMap, Map<Character, Integer> patternFreqMap) {
         for (char ch : patternFreqMap.keySet()) {
-            if (!textFreqMap.containsKey(ch) || textFreqMap.get(ch) < patternFreqMap.get(ch)) {
+            if (!windowFreqMap.containsKey(ch) || windowFreqMap.get(ch) < patternFreqMap.get(ch)) {
                 return false; // If a character is missing from the window or its count is less than needed, return false
             }
         }
@@ -88,89 +88,8 @@ class Solution {
 }
 
 
+
 //Improved Approach
-
-class Solution {
-    public String minWindow(String text, String pattern) {
-        // Frequency map of current window in text
-        Map<Character, Integer> windowFreqMap = new HashMap<>();
-
-        // Frequency map of required pattern characters
-        Map<Character, Integer> patternFreqMap = new HashMap<>();
-
-        // Build pattern frequency map
-        for (int i = 0; i < pattern.length(); i++) {
-            char ch = pattern.charAt(i);
-            patternFreqMap.put(ch, patternFreqMap.getOrDefault(ch, 0) + 1);
-        }
-
-        int windowStart = 0;
-        int windowEnd = 0;
-
-        int minValidLength = Integer.MAX_VALUE;
-        int bestStart = 0;
-        int bestEnd = 0;
-
-        while (windowEnd < text.length()) {
-            // Expand window → include current character
-            char ch = text.charAt(windowEnd);
-            windowFreqMap.put(ch, windowFreqMap.getOrDefault(ch, 0) + 1);
-
-            /*
-             If current window contains all required pattern characters,
-             try shrinking from left to get minimum length.
-             */
-            while (isWindowCoveringPattern(windowFreqMap, patternFreqMap)) {
-                int windowLength = windowEnd - windowStart + 1;
-
-                // Update minimum window if smaller
-                if (windowLength < minValidLength) {
-                    minValidLength = windowLength;
-                    bestStart = windowStart;
-                    bestEnd = windowEnd;
-                }
-
-                /*
-                 Shrink window from left:
-                 Remove start character and move start forward.
-                 */
-                char startChar = text.charAt(windowStart);
-                windowFreqMap.put(startChar, windowFreqMap.get(startChar) - 1);
-
-                if (windowFreqMap.get(startChar) == 0) {
-                    windowFreqMap.remove(startChar);
-                }
-
-                windowStart++;
-            }
-
-            windowEnd++;
-        }
-
-        return minValidLength == Integer.MAX_VALUE ? "" : text.substring(bestStart, bestEnd + 1);
-    }
-
-    /**
-     * Checks whether current window satisfies pattern requirement.
-     *
-     * Condition:
-     * For every character in pattern,
-     * window must contain it and frequency must be >= required frequency.
-     *
-     */
-    private boolean isWindowCoveringPattern(Map<Character, Integer> windowFreqMap, Map<Character, Integer> patternFreqMap) {
-        for (char ch : patternFreqMap.keySet()) {
-            if (!windowFreqMap.containsKey(ch) || windowFreqMap.get(ch) < patternFreqMap.get(ch)) {
-                return false;
-            }
-        }
-
-        return true;
-    }
-}
-
-
-//Better Approach
 
 class Solution {
     public String minWindow(String text, String pattern) {
@@ -239,5 +158,194 @@ class Solution {
 }
 
 
+//Better Approach
+
+class Solution {
+    public String minWindow(String text, String pattern) {
+        // Build frequency requirement of pattern
+        int[] patternFreqArr = new int[256];
+
+        for (int i = 0; i < pattern.length(); i++) {
+            patternFreqArr[pattern.charAt(i)]++;
+        }
+
+        int windowStart = 0;
+        int windowEnd = 0;
+
+        int minValidLength = Integer.MAX_VALUE;
+        int bestStart = 0;
+        int bestEnd = 0;
+
+        while (windowEnd < text.length()) {
+            /*
+             Expand window:
+             Reduce requirement of current character.
+             
+             Even if this character was NOT in pattern,
+             patternFreqArr[...] will go negative.
+             
+             That is perfectly fine.
+             
+             Meaning of negative:
+             - This character is either:
+               a) not required in pattern
+               b) already satisfied and now extra inside window
+             */
+            patternFreqArr[text.charAt(windowEnd)]--;
+
+            /*
+             If all requirements are satisfied i.e no entry in patternFreqArr is > 0.
+             Now try shrinking to find smaller valid window.
+             */
+            while (isWindowCoveringPattern(patternFreqArr)) {
+                int windowLength = windowEnd - windowStart + 1;
+
+                if (windowLength < minValidLength) {
+                    minValidLength = windowLength;
+                    bestStart = windowStart;
+                    bestEnd = windowEnd;
+                }
+
+                /*
+                Shrink window:
+                
+                We add back the character at windowStart
+                because we are removing it from the window.
+                
+                Cases:
+                
+                1) Character is part of the pattern and was exactly satisfied:
+                - Its count becomes > 0
+                - This means a required character is now missing
+                - Window becomes INVALID
+                
+                2) Character is NOT part of the pattern:
+                - Its count moves from negative to 0
+                - No requirement is violated
+                - Window will remain valid
+                
+                3) Character is part of the pattern but was present extra times:
+                - Its count moves closer to 0 from negative
+                - Requirement is still satisfied
+                - Window will remain valid
+                
+                In short:
+                Window becomes invalid only when removing a character
+                causes some required frequency to become positive (> 0).
+                */
+                patternFreqArr[text.charAt(windowStart)]++;
+
+                windowStart++;
+            }
+
+            windowEnd++;
+        }
+
+        return minValidLength == Integer.MAX_VALUE ? "" : text.substring(bestStart, bestEnd + 1);
+    }
+
+    /**
+     * Window is valid if:
+     * No character is still required.
+     *
+     * That means:
+     * All values in patternFreqArr must be <= 0.
+     *
+     * If any value > 0 → still missing required character.
+     */
+    private boolean isWindowCoveringPattern(int[] patternFreqArr) {
+        for (int i = 0; i < patternFreqArr.length; i++) {
+            if (patternFreqArr[i] > 0) {
+                return false;
+            }
+        }
+
+        return true;
+    }
+}
+
+
 //Optimal Approach
 
+class Solution {
+    /*
+     MICRO-OPTIMIZATION:
+    
+     Instead of using size 256 (full ASCII),
+     we use size 52 because input is limited to:
+    
+        'a' - 'z'  (26 lowercase)
+        'A' - 'Z'  (26 uppercase)
+    
+     Mapping strategy:
+    
+     Lowercase letters:
+         index = ch - 'a'
+         → maps 'a'..'z' to 0..25
+    
+     Uppercase letters:
+         index = ch - 'A' + 26
+         → maps 'A'..'Z' to 26..51
+    
+     This reduces unnecessary scanning space
+     and slightly improves constant factor.
+    */
+    public String minWindow(String text, String pattern) {
+        int[] patternFreqArr = new int[52];
+
+        for (int i = 0; i < pattern.length(); i++) {
+            int idx = getIndex(pattern.charAt(i));
+            patternFreqArr[idx]++;
+        }
+
+        int windowStart = 0;
+        int windowEnd = 0;
+
+        int minValidLength = Integer.MAX_VALUE;
+        int bestStart = 0;
+        int bestEnd = 0;
+
+        while (windowEnd < text.length()) {
+            int incomingIdx = getIndex(text.charAt(windowEnd));
+            patternFreqArr[incomingIdx]--;
+
+            while (isWindowCoveringPattern(patternFreqArr)) {
+
+                int windowLength = windowEnd - windowStart + 1;
+
+                if (windowLength < minValidLength) {
+                    minValidLength = windowLength;
+                    bestStart = windowStart;
+                    bestEnd = windowEnd;
+                }
+
+                int outgoingIdx = getIndex(text.charAt(windowStart));
+                patternFreqArr[outgoingIdx]++;
+
+                windowStart++;
+            }
+
+            windowEnd++;
+        }
+
+        return minValidLength == Integer.MAX_VALUE ? "" : text.substring(bestStart, bestEnd + 1);
+    }
+
+    private boolean isWindowCoveringPattern(int[] patternFreqArr) {
+        for (int freq : patternFreqArr) {
+            if (freq > 0) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    //Converts character into index 0..51.
+    private int getIndex(char ch) {
+        if (Character.isLowerCase(ch)) {
+            return ch - 'a';
+        } else {
+            return ch - 'A' + 26;
+        }
+    }
+}
