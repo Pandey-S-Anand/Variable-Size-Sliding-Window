@@ -1,49 +1,3 @@
-/*
-WHY:
-exactlyKDistinct = atMost(K) - atMost(K-1)
-
-Key Idea:
-Counting substrings with exactly K distinct characters directly is hard.
-Instead, we count a bigger group and subtract the unwanted part.
-
---------------------------------------------------------------------
-
-Think in terms of sets:
-
-Substrings with at most K distinct =
-    exactly 1 distinct
-  + exactly 2 distinct
-  + ...
-  + exactly (K-1) distinct
-  + exactly K distinct
-
-Substrings with at most (K-1) distinct =
-    exactly 1 distinct
-  + exactly 2 distinct
-  + ...
-  + exactly (K-1) distinct
-
-Subtracting:
-
-atMost(K) - atMost(K-1) = exactly K distinct
-
-All smaller cases cancel out.
-
----------------------------------
-Why sliding window?
-
-"Exactly K distinct" is NOT monotonic:
-- adding a character may break validity
-- removing a character may also break validity
-
-But "At most K distinct" IS monotonic:
-we only shrink when distinct > K
-
-So we transform the hard condition into two easy sliding window problems:
-
-exactly(K) = atMost(K) - atMost(K-1)
-*/
-
 //Bruteforce Approach
 
 class Solution {
@@ -70,6 +24,54 @@ class Solution {
 
 
 //Improved Approach
+
+/*
+WHY:
+  exactlyKDistinct = atMost(K) - atMost(K-1)
+
+Key Idea:
+  Counting substrings with exactly K distinct characters using sliding window 
+  is difficult because the condition is NON-MONOTONIC.
+
+  Suppose current window has exactly K distinct:
+
+    Expand right →
+        may remain K
+        OR may become K+1 (invalid)
+
+    Shrink left →
+        may remain K
+        OR may become K-1 (invalid)
+
+  We cannot decide a consistent direction.
+  So window cannot be maintained reliably.
+
+--------------------------------------------------------------------
+
+Instead we transform the problem:
+
+    exactly(K) = atMost(K) - atMost(K-1)
+
+Because:
+
+    atMost(K) distinct  = exactly(1) distinct + exactly(2) distinct + ... + exactly(K) distinct
+
+    atMost(K-1) distinct = exactly(1) distinct + exactly(2) distinct + ... + exactly(K-1) distinct
+
+Subtracting:
+
+atMost(K) - atMost(K-1) = exactly K distinct
+
+All smaller cases cancel out.
+
+--------------------------------------------------------------------
+
+Now "at most K distinct" IS monotonic:
+
+    If distinct > K → shrink left → always fixes window
+
+So sliding window works perfectly.
+*/
 
 class Solution {
     public int countSubstr(String str, int k) {
