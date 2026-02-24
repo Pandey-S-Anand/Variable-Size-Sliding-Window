@@ -25,10 +25,7 @@ Substrings with at most (K-1) distinct =
 
 Subtracting:
 
-atMost(K)
-- atMost(K-1)
---------------------------------
-= exactly K distinct
+atMost(K) - atMost(K-1) = exactly K distinct
 
 All smaller cases cancel out.
 
@@ -80,7 +77,7 @@ class Solution {
     }
 
     private int countSubstringAtMostKDistinct(String str, int k) {
-        Map<Character, Integer> freqMap = new HashMap<>();
+        Map<Character, Integer> windowFreqMap = new HashMap<>();
 
         int windowStart = 0;
         int windowEnd = 0;
@@ -88,19 +85,19 @@ class Solution {
 
         while (windowEnd < str.length()) {
             // include current character
-            char ch = str.charAt(windowEnd);
-            freqMap.put(ch, freqMap.getOrDefault(ch, 0) + 1);
+            char incomingChar = str.charAt(windowEnd);
+            windowFreqMap.put(incomingChar, windowFreqMap.getOrDefault(incomingChar, 0) + 1);
 
             /*
             If distinct characters exceed k,
             shrink window until constraint restored
             */
-            while (freqMap.size() > k) {
-                char leftChar = str.charAt(windowStart++);
-                freqMap.put(leftChar, freqMap.get(leftChar) - 1);
+            while (windowFreqMap.size() > k) {
+                char outgoingChar = str.charAt(windowStart++);
+                windowFreqMap.put(outgoingChar, windowFreqMap.get(outgoingChar) - 1);
 
-                if (freqMap.get(leftChar) == 0) {
-                    freqMap.remove(leftChar);
+                if (windowFreqMap.get(outgoingChar) == 0) {
+                    windowFreqMap.remove(outgoingChar);
                 }
             }
 
@@ -143,7 +140,7 @@ class Solution {
     }
 
     private int countSubstringAtMostKDistinct(String str, int k) {
-        int[] freqArr = new int[26]; // frequency of characters in current window
+        int[] windowFreqArr = new int[26]; // frequency of characters in current window
         int windowStart = 0;
         int windowEnd = 0;
 
@@ -151,14 +148,14 @@ class Solution {
 
         while (windowEnd < str.length()) {
             // include new character into window
-            freqArr[str.charAt(windowEnd) - 'a']++;
+            windowFreqArr[str.charAt(windowEnd) - 'a']++;
 
             /*
             If distinct characters exceed k,
             shrink window until it becomes valid again.
             */
-            while (!hasAtMostKDistinct(freqArr, k)) {
-                freqArr[str.charAt(windowStart++) - 'a']--;
+            while (!hasAtMostKDistinct(windowFreqArr, k)) {
+                windowFreqArr[str.charAt(windowStart++) - 'a']--;
             }
 
             int windowSize = windowEnd - windowStart + 1;
@@ -174,11 +171,11 @@ class Solution {
     Returns true if current window has at most k distinct characters.
     We count distinct characters by checking how many frequencies are non-zero.
     */
-    private boolean hasAtMostKDistinct(int[] freqArr, int k) {
+    private boolean hasAtMostKDistinct(int[] windowFreqArr, int k) {
         int distinctChars = 0;
 
         for (int i = 0; i < 26; i++) {
-            if (freqArr[i] != 0) {
+            if (windowFreqArr[i] != 0) {
                 distinctChars++;
 
                 if (distinctChars > k) {
@@ -190,6 +187,7 @@ class Solution {
         return true;
     }
 }
+
 
 //Optimal Approach
 
@@ -203,13 +201,13 @@ class Solution {
     frequency array every time.
     
     Key observation:
-    - If freqArr[idx] was 0 before adding a character → it is a NEW distinct char
-    - If freqArr[idx] becomes 0 after removing a character → that distinct char disappears
+    - If windowFreqArr[idx] was 0 before adding a character → it is a NEW distinct char
+    - If windowFreqArr[idx] becomes 0 after removing a character → that distinct char disappears
     
     So frequency transitions help us track distinct count in O(1).
     */
     private int countSubstringAtMostKDistinct(String str, int k) {
-        int[] freqArr = new int[26]; // frequency inside current window
+        int[] windowFreqArr = new int[26]; // frequency inside current window
         int windowStart = 0;
         int windowEnd = 0;
 
@@ -219,15 +217,15 @@ class Solution {
         while (windowEnd < str.length()) {
             // add new character to window
             int idx = str.charAt(windowEnd) - 'a';
-            if (freqArr[idx] == 0) { // new distinct character enters
+            if (windowFreqArr[idx] == 0) { // new distinct character enters
                 distinctCharsInWindow++;
             }
-            freqArr[idx]++;
+            windowFreqArr[idx]++;
 
             while (!hasAtMostKDistinct(distinctCharsInWindow, k)) {
                 idx = str.charAt(windowStart++) - 'a';
-                freqArr[idx]--;
-                if (freqArr[idx] == 0) { // character fully removed
+                windowFreqArr[idx]--;
+                if (windowFreqArr[idx] == 0) { // character fully removed
                     distinctCharsInWindow--;
                 }
             }
