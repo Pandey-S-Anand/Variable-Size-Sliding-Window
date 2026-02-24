@@ -5,12 +5,12 @@ class Solution {
         int maxLength = 0;
 
         // Keeps track of unique characters in the current substring
-        Set<Character> seen = new HashSet<>();
+        Set<Character> windowDistinctChars = new HashSet<>();
 
         for (int start = 0; start < str.length(); start++) {
             for (int end = start; end < str.length(); end++) {
 
-                seen.add(str.charAt(end));
+                windowDistinctChars.add(str.charAt(end));
 
                 int substringLength = end - start + 1;
 
@@ -27,7 +27,7 @@ class Solution {
                  *
                  * So one character repeated.
                  */
-                if (seen.size() < substringLength) {
+                if (windowDistinctChars.size() < substringLength) {
                     break; //Since the duplicate character is found so any further substrings starting from the current 'start' index will also contain this duplicate. , Therefore, we exit the inner loop.
                 }
 
@@ -42,7 +42,7 @@ class Solution {
              * Reason:
              * Each 'start' represents a completely NEW substring.
              */
-            seen.clear();
+            windowDistinctChars.clear();
         }
 
         return maxLength;
@@ -58,8 +58,7 @@ class Solution {
           Set stores characters currently present in the sliding window
           It represents the CONTENT of the current substring
          */
-        Set<Character> seen = new HashSet<>();
-
+        Set<Character> windowDistinctChars = new HashSet<>();
         int windowStart = 0;
         int windowEnd = 0;
         int maxLength = 0;
@@ -85,10 +84,10 @@ class Solution {
              * remove first 'm'
              * now window becomes valid again
              */
-            if (seen.contains(ch)) {
+            if (windowDistinctChars.contains(ch)) {
                 // Shrink window until we cross the old duplicate character
                 while (str.charAt(windowStart) != ch) {
-                    seen.remove(str.charAt(windowStart));
+                    windowDistinctChars.remove(str.charAt(windowStart));
                     windowStart++;
                 }
 
@@ -109,7 +108,7 @@ class Solution {
                 windowStart++;
             } else {
                 // Expand window normally if no duplicate
-                seen.add(ch);
+                windowDistinctChars.add(ch);
             }
 
             /*
