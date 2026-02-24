@@ -2,18 +2,18 @@
 
 class Solution {
     public int longestSubarray(int[] arr) {
-        int count0s = 0;
+        int zerosInWindow = 0;
         int maxLength = 0;
 
         // Try every possible starting index
         for (int start = 0; start < arr.length; start++) {
-            count0s = 0; // reset zero count for new subarray
+            zerosInWindow = 0; // reset zero count for new subarray
 
             // Expand subarray to the right
             for (int end = start; end < arr.length; end++) {
 
                 if (arr[end] == 0) {
-                    count0s++;
+                    zerosInWindow++;
                 }
 
                 /*
@@ -22,7 +22,7 @@ class Solution {
                  Further expansion cannot reduce zero count
                  Hence we stop exploring this start index.
                 */
-                if (!isValidSubarray(count0s)) {
+                if (!isValidWindow(zerosInWindow)) {
                     break;
                 }
 
@@ -42,8 +42,8 @@ class Solution {
     }
 
     // valid only if at most one zero exists
-    private boolean isValidSubarray(int count0s) {
-        return count0s <= 1;
+    private boolean isValidWindow(int zerosInWindow) {
+        return zerosInWindow <= 1;
     }
 }
 
@@ -90,14 +90,13 @@ class Solution {
     public int longestSubarray(int[] arr) {
         int windowStart = 0;
         int windowEnd = 0;
-        int count0s = 0; // number of zeros currently inside the window
+        int zerosInWindow = 0; // number of zeros currently inside the window
         int maxLength = 0; // best answer found so far (after one deletion)
 
         while (windowEnd < arr.length) {
-
             // include current element into window
             if (arr[windowEnd] == 0) {
-                count0s++;
+                zerosInWindow++;
             }
 
             /*
@@ -105,9 +104,9 @@ class Solution {
              If more than one zero exists, we cannot delete both,
              so shrink window from left until only one zero remains.
             */
-            while (!isValidWindow(count0s)) {
+            while (!isValidWindow(zerosInWindow)) {
                 if (arr[windowStart] == 0) {
-                    count0s--; // removing a zero from window
+                    zerosInWindow--; // removing a zero from window
                 }
                 windowStart++; // shrink window
             }
@@ -128,7 +127,7 @@ class Solution {
     }
 
     // window valid only if it contains at most one zero
-    private boolean isValidWindow(int count0s) {
-        return count0s <= 1;
+    private boolean isValidWindow(int zerosInWindow) {
+        return zerosInWindow <= 1;
     }
 }
