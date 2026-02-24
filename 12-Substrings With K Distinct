@@ -92,7 +92,7 @@ class Solution {
             If distinct characters exceed k,
             shrink window until constraint restored
             */
-            while (windowFreqMap.size() > k) {
+            while (!hasAtMostKDistinct(windowFreqMap, k)) {
                 char outgoingChar = str.charAt(windowStart++);
                 windowFreqMap.put(outgoingChar, windowFreqMap.get(outgoingChar) - 1);
 
@@ -128,6 +128,10 @@ class Solution {
         }
 
         return substringsAtMostKDistinct;
+    }
+
+    private boolean hasAtMostKDistinct(Map<Character, Integer> windowFreqMap, int k) {
+        return windowFreqMap.size() <= k;
     }
 }
 
