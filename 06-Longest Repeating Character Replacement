@@ -3,14 +3,14 @@
 class Solution {
     public int characterReplacement(String str, int k) {
         // frequencyArr stores frequency of characters in current substring
-        int[] frequencyArr = new int[26];
+        int[] windowFreqArr = new int[26];
 
         int maxLength = 0;
 
         for (int start = 0; start < str.length(); start++) {
             for (int end = start; end < str.length(); end++) {
                 // Include current character into substring
-                frequencyArr[str.charAt(end) - 'A']++;
+                windowFreqArr[str.charAt(end) - 'A']++;
 
                 int substringLength = end - start + 1;
 
@@ -18,7 +18,7 @@ class Solution {
                  Check if current substring can be converted into
                  all identical characters using at most k replacements.
                 */
-                if (!canFormRepeatingSubstring(frequencyArr, substringLength, k)) {
+                if (!canFormRepeatingSubstring(windowFreqArr, substringLength, k)) {
                     /*
                      IMPORTANT BREAK CONDITION
                     
@@ -48,13 +48,13 @@ class Solution {
             }
 
             // Reset frequency array for next starting index
-            Arrays.fill(frequencyArr, 0);
+            Arrays.fill(windowFreqArr, 0);
         }
 
         return maxLength;
     }
 
-    private boolean canFormRepeatingSubstring(int[] frequencyArr, int windowLength, int k) {
+    private boolean canFormRepeatingSubstring(int[] windowFreqArr, int windowLength, int allowedReplacememts) {
         /*
          Key Idea:
          To convert the whole substring into identical characters,
@@ -63,7 +63,7 @@ class Solution {
          Why?
          Because that minimizes the number of replacements needed.
         */
-        int maxFreq = getMaxFreq(frequencyArr);
+        int maxFreq = getMaxFreq(windowFreqArr);
 
         /*
          Number of characters that must be replaced =
@@ -75,10 +75,10 @@ class Solution {
          If replacements needed <= k
          → substring can be made uniform
         */
-        return remainingChars <= k;
+        return remainingChars <= allowedReplacememts;
     }
 
-    private int getMaxFreq(int[] frequencyArr) {
+    private int getMaxFreq(int[] windowFreqArr) {
         int maxFreq = 0;
 
         for (int i = 0; i < 26; i++) {
@@ -87,11 +87,11 @@ class Solution {
             So it cannot be the dominant character.
             Skip it for clarity of reasoning.
             */
-            if (frequencyArr[i] == 0) {
+            if (windowFreqArr[i] == 0) {
                 continue;
             }
-            if (frequencyArr[i] > maxFreq) {
-                maxFreq = frequencyArr[i];
+            if (windowFreqArr[i] > maxFreq) {
+                maxFreq = windowFreqArr[i];
             }
         }
 
@@ -105,10 +105,10 @@ class Solution {
 class Solution {
     public int characterReplacement(String str, int k) {
         /*
-         freqArr[i] = how many times character ('A' + i)
+         windowFreqArr[i] = how many times character ('A' + i)
          exists inside the CURRENT WINDOW
         */
-        int[] freqArr = new int[26];
+        int[] windowFreqArr = new int[26];
 
         int windowStart = 0;
         int windowEnd = 0;
@@ -117,15 +117,15 @@ class Solution {
         while (windowEnd < str.length()) {
             // Expand window by including current character
             char ch = str.charAt(windowEnd);
-            freqArr[ch - 'A']++;
+            windowFreqArr[ch - 'A']++;
 
             /*
              If current window cannot be converted into
              identical characters within k replacements,
              shrink window from the left.
             */
-            while (!canFormRepeatingSubstring(freqArr, windowStart, windowEnd, k)) {
-                freqArr[str.charAt(windowStart++) - 'A']--;
+            while (!canFormRepeatingSubstring(windowFreqArr, windowStart, windowEnd, k)) {
+                windowFreqArr[str.charAt(windowStart++) - 'A']--;
             }
 
             /*
@@ -143,7 +143,7 @@ class Solution {
         return maxLength;
     }
 
-    private boolean canFormRepeatingSubstring(int[] freqArr, int windowStart, int windowEnd, int k) {
+    private boolean canFormRepeatingSubstring(int[] windowFreqArr, int windowStart, int windowEnd, int allowedReplacements) {
         int windowSize = windowEnd - windowStart + 1;
         /*
          To make all characters identical,
@@ -152,21 +152,21 @@ class Solution {
         
          Required replacements = window size - frequency of dominant character
         */
-        int maxFreq = getMaxFreq(freqArr);
+        int maxFreq = getMaxFreq(windowFreqArr);
 
         int replacementChars = windowSize - maxFreq;
 
-        return replacementChars <= k;
+        return replacementChars <= allowedReplacements;
     }
 
-    private int getMaxFreq(int[] freqArr) {
+    private int getMaxFreq(int[] windowFreqArr) {
         int maxFreq = 0;
 
-        for (int val : freqArr) {
-            if (val == 0) {
+        for (int freq : windowFreqArr) {
+            if (freq == 0) {
                 continue;
             }
-            maxFreq = Math.max(maxFreq, val);
+            maxFreq = Math.max(maxFreq, freq);
         }
 
         return maxFreq;
@@ -178,7 +178,7 @@ class Solution {
 
 /*
 ===============================================================================
-LONGEST REPEATING CHARACTER REPLACEMENT — FULL CORRECT EXPLANATION
+LONGEST REPEATING CHARACTER REPLACEMENT
 ===============================================================================
 
 Goal:
@@ -360,7 +360,7 @@ Maximum recorded length = 4
 
 class Solution {
     public int characterReplacement(String str, int k) {
-        int[] freqArr = new int[26];
+        int[] windowFreqArr = new int[26];
 
         int windowStart = 0;
         int windowEnd = 0;
@@ -369,11 +369,11 @@ class Solution {
 
         while (windowEnd < str.length()) {
             char ch = str.charAt(windowEnd);
-            freqArr[ch - 'A']++;
-            maxFreq = Math.max(maxFreq, freqArr[ch - 'A']);
+            windowFreqArr[ch - 'A']++;
+            maxFreq = Math.max(maxFreq, windowFreqArr[ch - 'A']);
 
             while (!canFormRepeatingSubstring(windowStart, windowEnd, k, maxFreq)) {
-                freqArr[str.charAt(windowStart++) - 'A']--;
+                windowFreqArr[str.charAt(windowStart++) - 'A']--;
             }
 
             int substringLength = windowEnd - windowStart + 1;
@@ -384,9 +384,9 @@ class Solution {
         return maxLength;
     }
 
-    private boolean canFormRepeatingSubstring(int windowStart, int windowEnd, int k, int maxFreq) {
+    private boolean canFormRepeatingSubstring(int windowStart, int windowEnd, int allowedReplacements, int maxFreq) {
         int windowSize = windowEnd - windowStart + 1;
         int replacementChars = windowSize - maxFreq;
-        return replacementChars <= k;
+        return replacementChars <= allowedReplacements;
     }
 }
