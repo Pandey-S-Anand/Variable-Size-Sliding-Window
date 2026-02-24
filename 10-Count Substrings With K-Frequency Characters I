@@ -3,14 +3,14 @@
 class Solution {
     public int numberOfSubstrings(String str, int k) {
         int validSubstringCount = 0;
-        int[] freqArr = new int[26];
+        int[] windowFreqArr = new int[26];
 
         for (int start = 0; start < str.length(); start++) {
 
             for (int end = start; end < str.length(); end++) {
 
                 // include current character
-                freqArr[str.charAt(end) - 'a']++;
+                windowFreqArr[str.charAt(end) - 'a']++;
 
                 /*
                 As soon as a character frequency becomes ≥ k,
@@ -35,22 +35,22 @@ class Solution {
                 
                 Count = remaining length = n - end
                 */
-                if (hasCharFreqAtLeastK(freqArr, k)) {
+                if (hasCharFreqAtLeastK(windowFreqArr, k)) {
                     validSubstringCount += (str.length() - end);
                     break; // no need to extend further for this start
                 }
             }
 
             // reset frequency for next start index
-            Arrays.fill(freqArr, 0);
+            Arrays.fill(windowFreqArr, 0);
         }
 
         return validSubstringCount;
     }
 
     // returns true if any character appears ≥ k times
-    private boolean hasCharFreqAtLeastK(int[] freqArr, int k) {
-        for (int freq : freqArr) {
+    private boolean hasCharFreqAtLeastK(int[] windowFreqArr, int k) {
+        for (int freq : windowFreqArr) {
             if (freq >= k) {
                 return true;
             }
@@ -60,7 +60,7 @@ class Solution {
 }
 
 
-//Improved Approach
+//Better Approach
 
 class Solution {
     /*
@@ -110,28 +110,22 @@ class Solution {
     */
 
     public int numberOfSubstrings(String str, int k) {
-        Map<Character, Integer> freqMap = new HashMap<>();
+        int[] windowFreqArr = new int[26];
         int windowStart = 0;
         int windowEnd = 0;
         int badStrings = 0;
 
         while (windowEnd < str.length()) {
             // include right character
-            char rightChar = str.charAt(windowEnd);
-            freqMap.put(rightChar, freqMap.getOrDefault(rightChar, 0) + 1);
+            windowFreqArr[str.charAt(windowEnd) - 'a']++;
 
             /*
             If any character frequency becomes ≥ k,
             window is no longer a "bad substring".
             So shrink until all frequencies < k again.
             */
-            while (hasCharFreqAtLeastK(freqMap, k)) {
-                char leftChar = str.charAt(windowStart++);
-                freqMap.put(leftChar, freqMap.get(leftChar) - 1);
-
-                if (freqMap.get(leftChar) == 0) {
-                    freqMap.remove(leftChar);
-                }
+            while (!isWindowWithinKFreqLimit(windowFreqArr, k)) {
+                windowFreqArr[str.charAt(windowStart++) - 'a']--;
             }
 
             /*
@@ -154,51 +148,13 @@ class Solution {
     }
 
     // returns true if ANY character frequency ≥ k
-    private boolean hasCharFreqAtLeastK(Map<Character, Integer> freqMap, int k) {
-        for (int freq : freqMap.values()) {
-            if (freq >= k) {
-                return true;
-            }
-        }
-        return false;
-    }
-}
-
-
-//Better Approach
-
-class Solution {
-    public int numberOfSubstrings(String str, int k) {
-        int[] freqArr = new int[26];
-        int windowStart = 0;
-        int windowEnd = 0;
-
-        int badStrings = 0;
-
-        while (windowEnd < str.length()) {
-            freqArr[str.charAt(windowEnd) - 'a']++;
-
-            while (hasCharFreqAtLeastK(freqArr, k)) {
-                freqArr[str.charAt(windowStart++) - 'a']--;
-            }
-
-            badStrings += (windowEnd - windowStart + 1);
-
-            windowEnd++;
-        }
-
-        int totalSubstrings = (str.length() * (str.length() + 1)) / 2;
-
-        return totalSubstrings - badStrings;
-    }
-
-    private boolean hasCharFreqAtLeastK(int[] freqArr, int k) {
-        for (int freq : freqArr) {
+    private boolean isWindowWithinKFreqLimit(int[] windowFreqArr, int k) {
+        for (int freq : windowFreqArr) {
             if (freq != 0 && freq >= k) {
-                return true;
+                return false;
             }
         }
-        return false;
+        return true;
     }
 }
 
@@ -207,50 +163,55 @@ class Solution {
 
 class Solution {
     public int numberOfSubstrings(String str, int k) {
-        int[] freqArr = new int[26];
-        int badSubstringCount = 0;
-
+        int[] windowFreqArr = new int[26];
         int windowStart = 0;
         int windowEnd = 0;
+        int badStrings = 0;
 
         // tracks if any character currently violates (freq >= k)
-        char violatingChar = 0;
-        int violatingFreq = 0;
+        char violatingChar = Character.MIN_VALUE;
 
         while (windowEnd < str.length()) {
-            freqArr[str.charAt(windowEnd) - 'a']++;
+            windowFreqArr[str.charAt(windowEnd) - 'a']++;
 
             /*
-            If a character frequency reaches k,
-            this window is no longer a "bad" window
-            */
-            if (freqArr[str.charAt(windowEnd) - 'a'] == k) {
+             If any character frequency becomes exactly k,
+             this window is no longer a "bad" window.
+             
+             It now satisfies:
+                 at least one char freq ≥ k
+             
+             So we mark it as violating.
+             */
+            if (windowFreqArr[str.charAt(windowEnd) - 'a'] == k) {
                 violatingChar = str.charAt(windowEnd);
-                violatingFreq = k;
             }
 
-            // Shrink until all characters have freq < k again
-            while (hasCharFreqAtLeastK(violatingFreq, k)) {
-                freqArr[str.charAt(windowStart) - 'a']--;
+            while (!isWindowWithinKFreqLimit(violatingChar)) {
+                windowFreqArr[str.charAt(windowStart) - 'a']--;
 
-                // if the violating character is reduced, violation disappears
+                /*
+                 If we remove the violating character,
+                 then the violation disappears.
+                 
+                 After this removal, all frequencies are < k again.
+                 */
                 if (str.charAt(windowStart) == violatingChar) {
-                    violatingFreq--;
+                    violatingChar = Character.MIN_VALUE;
                 }
-
                 windowStart++;
             }
 
-            badSubstringCount += (windowEnd - windowStart + 1);
+            badStrings += (windowEnd - windowStart + 1);
             windowEnd++;
         }
 
         int totalSubstrings = (str.length() * (str.length() + 1)) / 2;
 
-        return totalSubstrings - badSubstringCount;
+        return totalSubstrings - badStrings;
     }
 
-    private boolean hasCharFreqAtLeastK(int violatingFreq, int k) {
-        return violatingFreq >= k;
+    private boolean isWindowWithinKFreqLimit(char violatingChar) {
+        return violatingChar == Character.MIN_VALUE;
     }
 }
