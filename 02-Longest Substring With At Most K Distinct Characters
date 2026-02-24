@@ -13,7 +13,7 @@ public class Solution {
                 distinctChars.add(str.charAt(end));
 
                 /*
-                 If distinct characters exceed k ? substring invalid
+                 If distinct characters exceed k then substring is invalid
                 
                  Important observation:
                  Once the substring [start ... end] becomes invalid,
