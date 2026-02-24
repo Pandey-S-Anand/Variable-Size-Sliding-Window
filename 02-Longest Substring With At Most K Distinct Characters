@@ -49,90 +49,88 @@ public class Solution {
 }
 
 
-//Better Approach
+//Improved Approach
 
 public class Solution {
-	public static int kDistinctChars(int k, String str) {
-     /*
-      freqMap tracks frequency of characters inside CURRENT WINDOW.
+    public static int kDistinctChars(int k, String str) {
+        /*
+         windowFreqMap tracks frequency of characters inside CURRENT WINDOW.
+        
+         Important:
+         Map size == number of DISTINCT characters in the window
+        */
+        Map<Character, Integer> windowFreqMap = new HashMap<>();
 
-      Important:
-      Map size == number of DISTINCT characters in the window
-     */
-     Map<Character,Integer> freqMap = new HashMap<>();
+        int windowStart = 0;
+        int windowEnd = 0;
+        int maxLength = 0;
 
-	 int windowStart = 0;
-     int windowEnd = 0;	
-     int maxLength = 0;
+        // Expand the window
+        while (windowEnd < str.length()) {
+            char ch = str.charAt(windowEnd);
 
-     // Expand the window
-     while(windowEnd < str.length()){
-       char ch = str.charAt(windowEnd);
+            // Include new character in the window
+            windowFreqMap.put(ch, windowFreqMap.getOrDefault(ch, 0) + 1);
 
-       // Include new character in the window
-       freqMap.put(ch, freqMap.getOrDefault(ch,0)+1);
+            /*
+             If distinct characters exceed k ? window becomes INVALID
+            
+             Since we are looking for a CONTIGUOUS SUBSTRING,
+             we cannot skip characters in between.
+            
+             Therefore the only way to fix the window is:
+             SHRINK FROM LEFT
+            
+             We keep removing characters from the left boundary
+             until distinct characters become <= k again.
+            */
+            while (windowFreqMap.size() > k) {
+                char startChar = str.charAt(windowStart);
 
-       /*
-        If distinct characters exceed k ? window becomes INVALID
+                // Remove its contribution
+                windowFreqMap.put(startChar, windowFreqMap.get(startChar) - 1);
 
-        Since we are looking for a CONTIGUOUS SUBSTRING,
-        we cannot skip characters in between.
+                // Completely remove from map if frequency becomes zero
+                if (windowFreqMap.get(startChar) == 0) {
+                    windowFreqMap.remove(startChar);
+                }
 
-        Therefore the only way to fix the window is:
-        SHRINK FROM LEFT
+                // Move left boundary forward
+                windowStart++;
+            }
 
-        We keep removing characters from the left boundary
-        until distinct characters become <= k again.
-       */
-       if(freqMap.size() > k){
-         while(freqMap.size() > k){
-           char startChar = str.charAt(windowStart);
+            /*
+             Now window is VALID again (distinct <= k)
+             Update answer using current window length
+            */
+            int substringLength = windowEnd - windowStart + 1;
+            maxLength = Math.max(maxLength, substringLength);
 
-           // Remove its contribution
-           freqMap.put(startChar, freqMap.get(startChar) - 1);
+            // Expand right boundary
+            windowEnd++;
+        }
 
-           // Completely remove from map if frequency becomes zero
-           if(freqMap.get(startChar) == 0){
-              freqMap.remove(startChar);
-           }
-
-           // Move left boundary forward
-           windowStart++;
-         }
-       }
-
-       /*
-        Now window is VALID again (distinct <= k)
-        Update answer using current window length
-       */
-       int substringLength = windowEnd - windowStart + 1;
-       maxLength = Math.max(maxLength, substringLength); 
-
-       // Expand right boundary
-       windowEnd++;
-     }
-     
-     return maxLength;
-	}
+        return maxLength;
+    }
 }
 
 
-//Optimal Approach
+//Better Approach
 
 import java.util.*;
 
 public class Solution {
     public static int kDistinctChars(int k, String str) {
-        int[] freqArr = new int[26];
+        int[] windowFreqArr = new int[26];
         int windowStart = 0;
         int windowEnd = 0;
         int maxLength = 0;
 
         while (windowEnd < str.length()) {
-            freqArr[str.charAt(windowEnd) - 'a']++;
+            windowFreqArr[str.charAt(windowEnd) - 'a']++;
 
-            while (!withinDistinctLimit(freqArr, k)) {
-                freqArr[str.charAt(windowStart++) - 'a']--;
+            while (!withinDistinctLimit(windowFreqArr, k)) {
+                windowFreqArr[str.charAt(windowStart++) - 'a']--;
             }
 
             int substringLength = windowEnd - windowStart + 1;
@@ -146,17 +144,90 @@ public class Solution {
 
     /*
     Counts how many unique characters currently exist in the window.
-    If this count exceeds k ? window invalid Otherwise window valid
+    If this count exceeds k, window is invalid Otherwise window valid
     */
-    private static boolean withinDistinctLimit(int[] freqArr, int k) {
+    private static boolean withinDistinctLimit(int[] windowFreqArr, int k) {
         int distinctCount = 0;
 
         for (int i = 0; i < 26; i++) {
-            if (freqArr[i] != 0) {
+            if (windowFreqArr[i] != 0) {
                 distinctCount++;
             }
         }
 
         return distinctCount <= k;
+    }
+}
+
+
+//Optimal Approach
+
+public class Solution {
+    /*
+     *
+     * Key Optimization:
+     * Instead of scanning entire frequency array (O(26))
+     * to count distinct characters every time,
+     * we maintain `windowDistinctCount` manually.
+     *
+     * This reduces unnecessary repeated scanning.
+     */
+    public static int kDistinctChars(int k, String str) {
+        int[] windowFreqArr = new int[26]; // frequency of characters in current window
+
+        int windowStart = 0;
+        int windowEnd = 0;
+
+        int maxLength = 0;
+        int windowDistinctCount = 0;
+
+        while (windowEnd < str.length()) {
+            /*
+             Include incoming character.
+             
+             If its frequency was 0 before increment,
+             it means a NEW distinct character is entering window.
+            */
+            int incomingIdx = str.charAt(windowEnd) - 'a';
+            if (windowFreqArr[incomingIdx] == 0) {
+                windowDistinctCount++;
+            }
+            windowFreqArr[incomingIdx]++;
+
+            /*
+             If distinct characters exceed k,
+             shrink window from left until condition restored.
+            */
+            while (!withinDistinctLimit(windowDistinctCount, k)) {
+
+                int outgoingIdx = str.charAt(windowStart) - 'a';
+                windowFreqArr[outgoingIdx]--;
+
+                /*
+                 If frequency becomes 0 after decrement,
+                 that distinct character is completely removed from window.
+                */
+                if (windowFreqArr[outgoingIdx] == 0) {
+                    windowDistinctCount--;
+                }
+
+                windowStart++;
+            }
+
+            /*
+             Window now contains at most k distinct characters.
+             Update maximum length.
+            */
+            int substringLength = windowEnd - windowStart + 1;
+            maxLength = Math.max(maxLength, substringLength);
+
+            windowEnd++;
+        }
+
+        return maxLength;
+    }
+
+    private static boolean withinDistinctLimit(int windowDistinctCount, int k) {
+        return windowDistinctCount <= k;
     }
 }
