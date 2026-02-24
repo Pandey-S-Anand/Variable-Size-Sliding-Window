@@ -3,12 +3,12 @@
 class Solution {
     public int numberOfSubstrings(String str) {
         int validStringCount = 0;
-        int[] freqArr = new int[3]; // counts for a, b, c
+        int[] windowFreqArr = new int[3]; // counts for a, b, c
 
         for (int start = 0; start < str.length(); start++) {
             for (int end = start; end < str.length(); end++) {
                 // include current character
-                freqArr[str.charAt(end) - 'a']++;
+                windowFreqArr[str.charAt(end) - 'a']++;
 
                 /*
                 As soon as a substring contains all three characters,
@@ -34,22 +34,22 @@ class Solution {
                 
                 Count = remaining length = n - end
                 */
-                if (hasAtLeastOneOccurrenceOfABC(freqArr)) {
+                if (hasAtLeastOneOccurrenceOfABC(windowFreqArr)) {
                     validStringCount += (str.length() - end);
                     break; // no need to expand further for this start
                 }
             }
 
             // reset frequencies for next starting index
-            Arrays.fill(freqArr, 0);
+            Arrays.fill(windowFreqArr, 0);
         }
 
         return validStringCount;
     }
 
     // checks if window contains at least one 'a', 'b', and 'c'
-    private boolean hasAtLeastOneOccurrenceOfABC(int[] freqArr) {
-        for (int freq : freqArr) {
+    private boolean hasAtLeastOneOccurrenceOfABC(int[] windowFreqArr) {
+        for (int freq : windowFreqArr) {
             if (freq < 1) {
                 return false;
             }
@@ -91,16 +91,15 @@ class Solution {
     Now we move start forward to search for a NEW valid window
     and capture a new set of substrings.
     */
-
     public int numberOfSubstrings(String str) {
-        int[] freqArr = new int[3];
+        int[] windowFreqArr = new int[3];
         int windowStart = 0;
         int windowEnd = 0;
         int validStringCount = 0;
 
         while (windowEnd < str.length()) {
             // include current character
-            freqArr[str.charAt(windowEnd) - 'a']++;
+            windowFreqArr[str.charAt(windowEnd) - 'a']++;
 
             /*
             While window is valid (contains a,b,c):
@@ -108,11 +107,11 @@ class Solution {
                and ending at any index ≥ windowEnd and index <= str.length() - 1
             2) Then shrink window to invalidate it so we can discover next valid window
             */
-            while (isValidWindow(freqArr)) {
+            while (isValidWindow(windowFreqArr)) {
                 // all extensions to the right remain valid
                 validStringCount += (str.length() - windowEnd);
                 // shrink → remove current start character
-                freqArr[str.charAt(windowStart++) - 'a']--;
+                windowFreqArr[str.charAt(windowStart++) - 'a']--;
             }
 
             windowEnd++;
@@ -122,7 +121,7 @@ class Solution {
     }
 
     // window valid only if contains at least one 'a','b','c'
-    private boolean isValidWindow(int[] freqArr) {
-        return freqArr[0] > 0 && freqArr[1] > 0 && freqArr[2] > 0;
+    private boolean isValidWindow(int[] windowFreqArr) {
+        return windowFreqArr[0] > 0 && windowFreqArr[1] > 0 && windowFreqArr[2] > 0;
     }
 }
