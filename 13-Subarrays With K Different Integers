@@ -1,7 +1,7 @@
 //Bruteforce Approach
 
 class Solution {
-    public int subarraysWithKDistinct(int[] arr) {
+    public int subarraysWithKDistinct(int[] arr, int k) {
         Set<Integer> distinctChars = new HashSet<>();
         int validStringCount = 0;
 
@@ -34,87 +34,106 @@ class Solution {
 }
 
 
+
 //Optimal Approach
 
+/*    
+  Directly counting subarrays with exactly K distinct elements
+  using sliding window is difficult because the condition is NON-MONOTONIC.
+
+  Suppose current window has exactly K distinct:
+
+    Expand right →
+        may remain K
+        OR may become K+1 (invalid)
+
+    Shrink left →
+        may remain K
+        OR may become K-1 (invalid)
+
+  We cannot decide a consistent direction.
+  So window cannot be maintained reliably.
+
+--------------------------------------------------------------------
+
+Instead we transform the problem:
+
+    exactly(K) = atMost(K) - atMost(K-1)
+
+Because:
+
+    atMost(K)  = exactly(1) distinct + exactly(2) distinct + ... + exactly(K) distinct
+
+    atMost(K-1) = exactly(1) distinct + exactly(2) distinct + ... + exactly(K-1) distinct
+
+Subtracting cancels smaller cases → leaves exactly(K)
+
+--------------------------------------------------------------------
+
+Now "at most K distinct" IS monotonic:
+
+    If distinct > K → shrink left → always fixes window
+
+So sliding window works perfectly.
+*/
 class Solution {
-    /*    
-    Directly counting subarrays with exactly K distinct elements
-    using sliding window is difficult because the condition is NON-MONOTONIC.
-    
-    Suppose current window has exactly K distinct:
-    
-        Expand right →
-            may remain K
-            OR may become K+1 (invalid)
-    
-        Shrink left →
-            may remain K
-            OR may become K-1 (invalid)
-    
-    We cannot decide a consistent direction.
-    So window cannot be maintained reliably.
-    
-    --------------------------------------------------------------------
-    
-    Instead we transform the problem:
-    
-        exactly(K) = atMost(K) - atMost(K-1)
-    
-    Because:
-    
-        atMost(K)
-        = exactly(1) + exactly(2) + ... + exactly(K)
-    
-        atMost(K-1)
-        = exactly(1) + exactly(2) + ... + exactly(K-1)
-    
-    Subtracting cancels smaller cases → leaves exactly(K)
-    
-    --------------------------------------------------------------------
-    
-    Now "at most K distinct" IS monotonic:
-    
-        If distinct > K → shrink left → always fixes window
-    
-    So sliding window works perfectly.
-    */
     public int subarraysWithKDistinct(int[] arr, int k) {
-        return subarraysWithAtmostKDistinct(arr, k) - subarraysWithAtmostKDistinct(arr, k - 1);
+        return countSubarrayAtMostKDistinct(arr, k) - countSubarrayAtMostKDistinct(arr, k - 1);
     }
 
-    private int subarraysWithAtmostKDistinct(int[] arr, int k) {
-        Map<Integer, Integer> freqMap = new HashMap<>();
+    private int countSubarrayAtMostKDistinct(int[] arr, int k) {
+        Map<Integer, Integer> windowFreqMap = new HashMap<>();
 
         int windowStart = 0;
         int windowEnd = 0;
-        int validSubarrayCount = 0;
+        int substringsAtMostKDistinct = 0;
 
         while (windowEnd < arr.length) {
-            // include new element
-            freqMap.put(arr[windowEnd], freqMap.getOrDefault(arr[windowEnd], 0) + 1);
+            // include current character
+            windowFreqMap.put(arr[windowEnd], windowFreqMap.getOrDefault(arr[windowEnd], 0) + 1);
 
-            // shrink if distinct elements exceed k
-            while (freqMap.size() > k) {
-                freqMap.put(arr[windowStart], freqMap.get(arr[windowStart]) - 1);
-
-                if (freqMap.get(arr[windowStart]) == 0) {
-                    freqMap.remove(arr[windowStart]);
+            /*
+            If distinct characters exceed k,
+            shrink window until constraint restored
+            */
+            while (!hasAtMostKDistinct(windowFreqMap, k)) {
+                windowFreqMap.put(arr[windowStart], windowFreqMap.get(arr[windowStart]) - 1);
+                if (windowFreqMap.get(arr[windowStart]) == 0) {
+                    windowFreqMap.remove(arr[windowStart]);
                 }
-
                 windowStart++;
             }
 
             /*
-            Window now has ≤ k distinct elements
+            At this point window is valid (≤ k distinct)
             
-            All subarrays ending at windowEnd and starting from
-            [windowStart ... windowEnd] are valid
+            Now comes the most important observation:
+            
+            All substrings ending at windowEnd and starting
+            from any index between [windowStart ... windowEnd]
+            are valid.
+            
+            Example:
+                window = [start ... end]
+            
+                Valid substrings ending at end:
+                end
+                end-1..end
+                end-2..end
+                ...
+                start..end
+            
+            Count = window length = windowEnd - windowStart + 1
             */
-            validSubarrayCount += (windowEnd - windowStart + 1);
-
+            int windowSize = windowEnd - windowStart + 1;
+            substringsAtMostKDistinct += windowSize;
             windowEnd++;
         }
 
-        return validSubarrayCount;
+        return substringsAtMostKDistinct;
+    }
+
+    private boolean hasAtMostKDistinct(Map<Integer, Integer> windowFreqMap, int k) {
+        return windowFreqMap.size() <= k;
     }
 }
